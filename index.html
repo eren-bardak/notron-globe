@@ -2,11 +2,8 @@
 <html>
 <head>
   <meta charset="UTF-8" />
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <script src="https://unpkg.com/globe.gl"></script>
 
@@ -23,85 +20,185 @@
       width: 100vw;
       height: 100vh;
     }
+
+    #sunGlow {
+      position: fixed;
+      top: -120px;
+      left: -120px;
+      width: 420px;
+      height: 420px;
+      pointer-events: none;
+      z-index: 2;
+
+      background:
+        radial-gradient(
+          circle,
+          rgba(255,220,130,.95) 0%,
+          rgba(255,180,60,.35) 25%,
+          rgba(255,160,40,.08) 55%,
+          transparent 75%
+        );
+
+      filter: blur(8px);
+    }
+
+    #ray1, #ray2, #ray3 {
+      position: fixed;
+      left: -50px;
+      top: 30px;
+      width: 600px;
+      height: 80px;
+      transform-origin: left center;
+      pointer-events: none;
+      z-index: 1;
+
+      background: linear-gradient(
+        90deg,
+        rgba(255,220,130,.22),
+        rgba(255,200,90,.08),
+        transparent
+      );
+
+      filter: blur(14px);
+    }
+
+    #ray1 { transform: rotate(18deg); }
+    #ray2 { transform: rotate(31deg); top: 90px; }
+    #ray3 { transform: rotate(43deg); top: 150px; }
   </style>
 </head>
 
 <body>
 
+<div id="sunGlow"></div>
+<div id="ray1"></div>
+<div id="ray2"></div>
+<div id="ray3"></div>
+
 <div id="globe"></div>
 
 <script>
-
-const world = Globe()
-  (document.getElementById("globe"))
-
+const world = Globe()(document.getElementById("globe"))
   .globeImageUrl(
     "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
   )
-
   .bumpImageUrl(
     "https://unpkg.com/three-globe/example/img/earth-topology.png"
   )
-
   .backgroundImageUrl(
     "https://unpkg.com/three-globe/example/img/night-sky.png"
   )
-
   .showAtmosphere(true)
-
-  .atmosphereColor("#4da6ff")
-
+  .atmosphereColor("#6bb8ff")
   .atmosphereAltitude(0.18);
 
-
-// Starting camera
 world.pointOfView({
-  lat: 25,
-  lng: 25,
-  altitude: 2.2
-});
+  lat: 30,
+  lng: 20,
+  altitude: 2.1
+}, 0);
 
-
-// Controls
 const controls = world.controls();
 
 controls.enableRotate = true;
-
 controls.enableZoom = true;
-
 controls.enablePan = false;
 
+controls.autoRotate = true;
+controls.autoRotateSpeed = 0.18;
 
-// Zoom limits
 controls.minDistance = 105;
-
 controls.maxDistance = 500;
 
-
-// Slow automatic rotation
-controls.autoRotate = true;
-
-controls.autoRotateSpeed = 0.20;
-
-
-// Stop rotation when user interacts
 document.addEventListener("pointerdown", () => {
   controls.autoRotate = false;
 });
 
 
-// Responsive
-window.addEventListener("resize", () => {
+// -------------------------
+// COUNTRY BORDERS
+// -------------------------
+
+fetch(
+  "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
+)
+.then(res => res.json())
+.then(countries => {
 
   world
-    .width(window.innerWidth)
-    .height(window.innerHeight);
+    .polygonsData(countries.features)
 
+    .polygonAltitude(0.007)
+
+    .polygonCapColor(() =>
+      "rgba(0,0,0,0)"
+    )
+
+    .polygonSideColor(() =>
+      "rgba(0,0,0,0)"
+    )
+
+    .polygonStrokeColor(() =>
+      "rgba(255,210,70,0.85)"
+    );
 });
 
+
+// -------------------------
+// CLOUD LAYER
+// -------------------------
+
+const THREE = world.scene().constructor;
+
+const textureLoader = new window.THREE.TextureLoader();
+
+textureLoader.load(
+  "https://raw.githubusercontent.com/turban/webgl-earth/master/images/fair_clouds_4k.png",
+
+  cloudTexture => {
+
+    const cloudGeometry =
+      new window.THREE.SphereGeometry(100.7, 75, 75);
+
+    const cloudMaterial =
+      new window.THREE.MeshPhongMaterial({
+        map: cloudTexture,
+        transparent: true,
+        opacity: 0.38,
+        depthWrite: false
+      });
+
+    const cloudMesh =
+      new window.THREE.Mesh(
+        cloudGeometry,
+        cloudMaterial
+      );
+
+    world.scene().add(cloudMesh);
+
+    function animateClouds() {
+
+      cloudMesh.rotation.y += 0.00025;
+
+      requestAnimationFrame(
+        animateClouds
+      );
+    }
+
+    animateClouds();
+  }
+);
+
+
+window.addEventListener(
+  "resize",
+  () => {
+    world
+      .width(window.innerWidth)
+      .height(window.innerHeight);
+  }
+);
 </script>
 
 </body>
 </html>
-
-
