@@ -1,0 +1,3805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+<title>Notron Commune</title>
+
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Cesium.js"></script>
+
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Widgets/widgets.css"
+/>
+
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#cesiumContainer {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #000;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+.cesium-viewer-toolbar {
+  display: none !important;
+}
+
+
+/* =========================
+   SEARCH
+========================= */
+
+#ui {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: min(90vw, 440px);
+
+  z-index: 1000;
+}
+
+
+#search {
+  display: flex;
+
+  gap: 8px;
+  padding: 8px;
+
+  border-radius: 20px;
+
+  background:
+    rgba(5,11,22,.76);
+
+  border:
+    1px solid rgba(255,255,255,.13);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+
+  box-shadow:
+    0 15px 40px rgba(0,0,0,.35);
+}
+
+
+#countryInput {
+  flex: 1;
+
+  min-width: 0;
+
+  border: 0;
+  outline: 0;
+
+  padding: 13px 15px;
+
+  border-radius: 14px;
+
+  background:
+    rgba(255,255,255,.08);
+
+  color: #fff;
+
+  font-size: 15px;
+}
+
+
+#countryInput::placeholder {
+  color:
+    rgba(255,255,255,.5);
+}
+
+
+#focusButton {
+  border: 0;
+
+  border-radius: 14px;
+
+  padding:
+    0 18px;
+
+  background:
+    #fff;
+
+  color:
+    #09111d;
+
+  font-weight:
+    700;
+
+  cursor:
+    pointer;
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+#status {
+  width:
+    max-content;
+
+  max-width:
+    90%;
+
+  margin:
+    9px auto 0;
+
+  padding:
+    7px 13px;
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(5,11,22,.65);
+
+  border:
+    1px solid rgba(255,255,255,.10);
+
+  backdrop-filter:
+    blur(12px);
+
+  color:
+    rgba(255,255,255,.65);
+
+  font-size:
+    11px;
+}
+
+
+#status strong {
+  color:
+    #fff;
+}
+
+
+/* =========================
+   CLOUDS
+========================= */
+
+#cloudLayer {
+  position:
+    fixed;
+
+  inset:
+    0;
+
+  z-index:
+    500;
+
+  pointer-events:
+    none;
+
+  overflow:
+    hidden;
+}
+
+
+.cloud {
+  position:
+    absolute;
+
+  min-width:
+    68px;
+
+  max-width:
+    100px;
+
+  padding:
+    8px 11px;
+
+  border-radius:
+    999px;
+
+  color:
+    #142336;
+
+  font-size:
+    9px;
+
+  font-weight:
+    700;
+
+  text-align:
+    center;
+
+  opacity:
+    0;
+
+
+  background:
+
+    radial-gradient(
+      circle at 27% 27%,
+      #fff 0 28%,
+      transparent 30%
+    ),
+
+    radial-gradient(
+      circle at 53% 17%,
+      #fff 0 34%,
+      transparent 36%
+    ),
+
+    radial-gradient(
+      circle at 77% 31%,
+      #f9fcff 0 27%,
+      transparent 29%
+    ),
+
+    linear-gradient(
+      180deg,
+      #fff,
+      #e3f2ff
+    );
+
+
+  box-shadow:
+
+    0 8px 20px
+    rgba(0,0,0,.25),
+
+    0 0 18px
+    rgba(175,220,255,.30);
+
+
+  transform:
+
+    translate(-50%,-50%)
+
+    scale(.15);
+
+
+  animation:
+
+    cloudLife
+    8s
+    ease-in-out
+    forwards,
+
+    cloudFloat
+    5s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+
+.cloud::before {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  width:
+    29px;
+
+  height:
+    29px;
+
+  left:
+    13px;
+
+  top:
+    -12px;
+
+  border-radius:
+    50%;
+
+  background:
+    #fff;
+
+  z-index:
+    -1;
+}
+
+
+.cloud::after {
+
+  content:
+    "";
+
+  position:
+    absolute;
+
+  width:
+    35px;
+
+  height:
+    35px;
+
+  right:
+    13px;
+
+  top:
+    -15px;
+
+  border-radius:
+    50%;
+
+  background:
+    #f9fcff;
+
+  z-index:
+    -1;
+}
+
+
+@keyframes cloudLife {
+
+  0% {
+
+    opacity:
+      0;
+
+    transform:
+
+      translate(-50%,-50%)
+
+      translateY(10px)
+
+      scale(.15);
+
+    filter:
+      blur(3px);
+  }
+
+
+  15% {
+
+    opacity:
+      1;
+
+    transform:
+
+      translate(-50%,-50%)
+
+      scale(1);
+
+    filter:
+      blur(0);
+  }
+
+
+  68% {
+
+    opacity:
+      1;
+
+    transform:
+
+      translate(-50%,-50%)
+
+      translateY(-4px)
+
+      scale(1);
+  }
+
+
+  100% {
+
+    opacity:
+      0;
+
+    transform:
+
+      translate(-50%,-50%)
+
+      translateY(-18px)
+
+      scale(.82);
+
+    filter:
+      blur(2px);
+  }
+}
+
+
+@keyframes cloudFloat {
+
+  from {
+
+    margin-left:
+      -5px;
+
+    margin-top:
+      3px;
+  }
+
+
+  to {
+
+    margin-left:
+      7px;
+
+    margin-top:
+      -5px;
+  }
+}
+
+
+/* =========================
+   SUN
+========================= */
+
+#sunLayer {
+  position:
+    fixed;
+
+  inset:
+    0;
+
+  z-index:
+    25;
+
+  pointer-events:
+    none;
+
+  overflow:
+    hidden;
+}
+
+
+#realSun {
+
+  position:
+    absolute;
+
+  width:
+    105px;
+
+  height:
+    105px;
+
+  margin-left:
+    -52px;
+
+  margin-top:
+    -52px;
+
+  border-radius:
+    50%;
+
+  opacity:
+    0;
+
+  pointer-events:
+    none;
+
+  mix-blend-mode:
+    screen;
+
+
+  background:
+
+    radial-gradient(
+
+      circle,
+
+      rgba(255,255,250,1) 0%,
+
+      rgba(255,248,210,.98) 8%,
+
+      rgba(255,220,130,.88) 18%,
+
+      rgba(255,180,70,.48) 32%,
+
+      rgba(255,135,30,.15) 50%,
+
+      transparent 72%
+
+    );
+
+
+  box-shadow:
+
+    0 0 35px
+    rgba(255,245,190,.95),
+
+    0 0 80px
+    rgba(255,210,110,.65),
+
+    0 0 170px
+    rgba(255,170,55,.35),
+
+    0 0 280px
+    rgba(255,130,30,.15);
+}
+
+
+.realSunRay {
+
+  position:
+    absolute;
+
+  left:
+    0;
+
+  top:
+    0;
+
+  width:
+    max(135vw,1500px);
+
+  height:
+    95px;
+
+  opacity:
+    0;
+
+  transform-origin:
+    0 50%;
+
+  filter:
+    blur(24px);
+
+  mix-blend-mode:
+    screen;
+
+  pointer-events:
+    none;
+
+
+  background:
+
+    linear-gradient(
+
+      90deg,
+
+      rgba(255,247,205,.34) 0%,
+
+      rgba(255,226,150,.22) 12%,
+
+      rgba(255,199,105,.12) 32%,
+
+      rgba(255,175,70,.05) 55%,
+
+      transparent 78%
+
+    );
+}
+
+
+.realSunRay.soft {
+
+  height:
+    170px;
+
+  filter:
+    blur(44px);
+}
+
+
+#sunBloom {
+
+  position:
+    absolute;
+
+  width:
+    430px;
+
+  height:
+    430px;
+
+  margin-left:
+    -215px;
+
+  margin-top:
+    -215px;
+
+  border-radius:
+    50%;
+
+  opacity:
+    0;
+
+  pointer-events:
+    none;
+
+  mix-blend-mode:
+    screen;
+
+
+  background:
+
+    radial-gradient(
+
+      circle,
+
+      rgba(255,225,150,.10),
+
+      rgba(255,185,90,.045) 35%,
+
+      transparent 70%
+
+    );
+
+
+  filter:
+    blur(20px);
+}
+
+
+#vignette {
+
+  position:
+    fixed;
+
+  inset:
+    0;
+
+  z-index:
+    30;
+
+  pointer-events:
+    none;
+
+  box-shadow:
+
+    inset 0 0 90px
+    rgba(0,0,0,.18);
+}
+
+
+#errorPanel {
+
+  display:
+    none;
+
+  position:
+    fixed;
+
+  left:
+    50%;
+
+  bottom:
+    35px;
+
+  transform:
+    translateX(-50%);
+
+  z-index:
+    2000;
+
+  max-width:
+    90%;
+
+  padding:
+    12px 18px;
+
+  border-radius:
+    12px;
+
+  background:
+    rgba(130,20,20,.92);
+
+  color:
+    #fff;
+
+  font-size:
+    12px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div id="cesiumContainer"></div>
+
+
+<div id="sunLayer">
+
+  <div id="sunBloom"></div>
+
+  <div
+    class="realSunRay"
+    data-offset="-4">
+  </div>
+
+  <div
+    class="realSunRay soft"
+    data-offset="-1.5">
+  </div>
+
+  <div
+    class="realSunRay"
+    data-offset="2">
+  </div>
+
+  <div
+    class="realSunRay soft"
+    data-offset="5">
+  </div>
+
+  <div id="realSun"></div>
+
+</div>
+
+
+<div id="vignette"></div>
+
+
+<div id="ui">
+
+<form id="search">
+
+<input
+  id="countryInput"
+  placeholder="Search country..."
+  autocomplete="off"
+/>
+
+<button
+  id="focusButton"
+  type="submit">
+
+Focus
+
+</button>
+
+</form>
+
+
+<div id="status">
+
+<strong id="countryLabel">
+Türkiye
+</strong>
+
+· Commune · Anonymous reactions
+
+</div>
+
+</div>
+
+
+<div id="cloudLayer"></div>
+
+<div id="errorPanel"></div>
+
+
+<script>
+
+
+/* =========================================================
+   CONFIG
+========================================================= */
+
+
+const SUN_VARIANCE_WEIGHT =
+  1.0;
+
+
+/*
+120000 = 120 km
+*/
+
+const MIN_ZOOM_DISTANCE =
+  120000;
+
+
+/*
+IMPORTANT
+
+Controls how visible
+the NIGHT side stays.
+
+0.0 = Cesium original dark night
+
+0.5 = moderately visible
+
+0.78 = recommended
+
+1.0 = brightest night
+*/
+
+const NIGHT_VISIBILITY =
+  0.78;
+
+
+const MAX_CLOUDS =
+  3;
+
+
+
+/* =========================================================
+   VIEWER
+========================================================= */
+
+
+const viewer =
+
+  new Cesium.Viewer(
+
+    "cesiumContainer",
+
+    {
+
+      animation:
+        false,
+
+      timeline:
+        false,
+
+      baseLayerPicker:
+        false,
+
+      geocoder:
+        false,
+
+      homeButton:
+        false,
+
+      sceneModePicker:
+        false,
+
+      navigationHelpButton:
+        false,
+
+      fullscreenButton:
+        false,
+
+      infoBox:
+        false,
+
+      selectionIndicator:
+        false,
+
+      shouldAnimate:
+        true,
+
+      baseLayer:
+        false,
+
+      terrainProvider:
+
+        new Cesium
+          .EllipsoidTerrainProvider()
+
+    }
+
+  );
+
+
+
+/* =========================================================
+   QUALITY
+========================================================= */
+
+
+viewer.resolutionScale =
+
+  Math.min(
+
+    window.devicePixelRatio
+    ||
+    1,
+
+    2
+
+  );
+
+
+viewer.scene.globe.maximumScreenSpaceError =
+  1;
+
+
+viewer.scene.globe.tileCacheSize =
+  1000;
+
+
+viewer.scene.globe.preloadAncestors =
+  true;
+
+
+viewer.scene.globe.preloadSiblings =
+  true;
+
+
+viewer.scene.fxaa =
+  true;
+
+
+
+/* =========================================================
+   SPACE
+========================================================= */
+
+
+viewer.scene.skyBox.show =
+  true;
+
+
+viewer.scene.backgroundColor =
+  Cesium.Color.BLACK;
+
+
+viewer.scene.skyAtmosphere.show =
+  true;
+
+
+viewer.scene.sun.show =
+  true;
+
+
+viewer.scene.moon.show =
+  true;
+
+
+viewer.scene.globe.showGroundAtmosphere =
+  true;
+
+
+
+/* =========================================================
+   REAL SUN LIGHTING
+========================================================= */
+
+
+viewer.scene.globe.enableLighting =
+  true;
+
+
+viewer.scene.globe.dynamicAtmosphereLighting =
+  true;
+
+
+viewer.scene.globe.dynamicAtmosphereLightingFromSun =
+  true;
+
+
+/*
+Makes border polylines easier
+to see over terrain.
+*/
+
+viewer.scene.globe.depthTestAgainstTerrain =
+  false;
+
+
+/*
+Slightly softer Sun intensity.
+*/
+
+viewer.scene.light =
+
+  new Cesium.SunLight({
+
+    intensity:
+      1.7
+
+  });
+
+
+
+/* =========================================================
+   REAL TIME
+========================================================= */
+
+
+viewer.clock.currentTime =
+
+  Cesium.JulianDate
+    .fromDate(
+
+      new Date()
+
+    );
+
+
+viewer.clock.shouldAnimate =
+  true;
+
+
+viewer.clock.multiplier =
+  1;
+
+
+
+/* =========================================================
+   ZOOM
+========================================================= */
+
+
+viewer
+.scene
+.screenSpaceCameraController
+.minimumZoomDistance =
+  MIN_ZOOM_DISTANCE;
+
+
+viewer
+.scene
+.screenSpaceCameraController
+.maximumZoomDistance =
+  55000000;
+
+
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+
+
+let countries =
+  [];
+
+
+let selectedCountry =
+  null;
+
+
+let selectedSafeArea =
+  null;
+
+
+let worldBorderEntities =
+  [];
+
+
+let selectedBorderEntities =
+  [];
+
+
+let cloudObjects =
+  [];
+
+
+let cloudTimer =
+  null;
+
+
+
+/* =========================================================
+   COMMENTS
+========================================================= */
+
+
+const comments = [
+
+  "Mantıklı",
+
+  "Katılıyorum",
+
+  "Bence iyi",
+
+  "Emin değilim",
+
+  "Olabilir",
+
+  "Neden?",
+
+  "Kararsızım",
+
+  "Destekliyorum",
+
+  "Riskli olabilir",
+
+  "Daha adil olur",
+
+  "İyi düşünülmeli",
+
+  "Bence hayır"
+
+];
+
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+
+function clamp(
+  value,
+  min,
+  max
+) {
+
+  return Math.max(
+
+    min,
+
+    Math.min(
+      max,
+      value
+    )
+
+  );
+
+}
+
+
+
+function smoothstep(
+  min,
+  max,
+  value
+) {
+
+  if(
+    min === max
+  ) {
+
+    return 0;
+
+  }
+
+
+  const x =
+
+    clamp(
+
+      (value - min)
+      /
+      (max - min),
+
+      0,
+
+      1
+
+    );
+
+
+  return
+
+    x
+
+    *
+
+    x
+
+    *
+
+    (
+      3
+      -
+      2 * x
+    );
+
+}
+
+
+
+function normalize(text) {
+
+  return String(
+    text || ""
+  )
+
+  .toLowerCase()
+
+  .replaceAll(
+    "ı",
+    "i"
+  )
+
+  .normalize(
+    "NFD"
+  )
+
+  .replace(
+    /[\u0300-\u036f]/g,
+    ""
+  )
+
+  .replace(
+    /[^a-z0-9]/g,
+    ""
+  );
+
+}
+
+
+
+function countryName(
+  country
+) {
+
+  return (
+
+    country
+      ?.properties
+      ?.name
+
+    ||
+
+    country
+      ?.properties
+      ?.NAME
+
+    ||
+
+    country
+      ?.properties
+      ?.ADMIN
+
+    ||
+
+    ""
+
+  );
+
+}
+
+
+
+function showError(
+  error
+) {
+
+  console.error(
+    error
+  );
+
+
+  const panel =
+
+    document
+      .getElementById(
+        "errorPanel"
+      );
+
+
+  panel.style.display =
+    "block";
+
+
+  panel.textContent =
+
+    "Error: "
+
+    +
+
+    (
+      error?.message
+      ||
+      String(error)
+    );
+
+}
+
+
+
+/* =========================================================
+   SATELLITE
+========================================================= */
+
+
+async function loadSatelliteImagery() {
+
+
+  const provider =
+
+    await Cesium
+      .ArcGisMapServerImageryProvider
+      .fromUrl(
+
+        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+
+      );
+
+
+  viewer
+    .imageryLayers
+    .addImageryProvider(
+      provider
+    );
+
+}
+
+
+
+/* =========================================================
+   SEARCH COUNTRY
+========================================================= */
+
+
+function findCountry(
+  search
+) {
+
+
+  let query =
+
+    normalize(
+      search
+    );
+
+
+  if(
+    query === "turkiye"
+  ) {
+
+    query =
+      "turkey";
+
+  }
+
+
+  if(
+    query === "usa"
+    ||
+    query === "us"
+  ) {
+
+    query =
+      "unitedstatesofamerica";
+
+  }
+
+
+  if(
+    query === "uk"
+  ) {
+
+    query =
+      "unitedkingdom";
+
+  }
+
+
+
+  return countries.find(
+
+    country =>
+
+      normalize(
+        countryName(
+          country
+        )
+      )
+
+      ===
+
+      query
+
+  )
+
+
+  ||
+
+
+  countries.find(
+
+    country =>
+
+      normalize(
+        countryName(
+          country
+        )
+      )
+
+      .includes(
+        query
+      )
+
+  );
+
+}
+
+
+
+/* =========================================================
+   BORDER ENGINE
+========================================================= */
+
+
+function getCountryRings(
+  feature
+) {
+
+
+  const geometry =
+    feature?.geometry;
+
+
+  if(
+    !geometry
+  ) {
+
+    return [];
+
+  }
+
+
+  if(
+    geometry.type ===
+    "Polygon"
+  ) {
+
+    return [
+
+      geometry
+        .coordinates[0]
+
+    ];
+
+  }
+
+
+  if(
+    geometry.type ===
+    "MultiPolygon"
+  ) {
+
+    return geometry
+      .coordinates
+      .map(
+
+        polygon =>
+          polygon[0]
+
+      );
+
+  }
+
+
+  return [];
+
+}
+
+
+
+function ringToPositions(
+  ring
+) {
+
+
+  const degrees =
+    [];
+
+
+  ring.forEach(
+
+    coordinate => {
+
+
+      degrees.push(
+
+        coordinate[0],
+
+        coordinate[1]
+
+      );
+
+    }
+
+  );
+
+
+  return Cesium
+    .Cartesian3
+    .fromDegreesArray(
+      degrees
+    );
+
+}
+
+
+
+function clearEntityList(
+  list
+) {
+
+
+  list.forEach(
+
+    entity =>
+
+      viewer
+        .entities
+        .remove(
+          entity
+        )
+
+  );
+
+
+  list.length =
+    0;
+
+}
+
+
+
+/* =========================================================
+   ALL COUNTRY BORDERS
+========================================================= */
+
+
+function drawWorldBorders() {
+
+  clearEntityList(
+    worldBorderEntities
+  );
+
+
+  countries.forEach(
+
+    country => {
+
+
+      getCountryRings(
+        country
+      )
+
+      .forEach(
+
+        ring => {
+
+
+          const positions =
+
+            ringToPositions(
+              ring
+            );
+
+
+          /*
+          SOFT WHITE HALO
+          */
+
+
+          const halo =
+
+            viewer
+              .entities
+              .add({
+
+                polyline: {
+
+                  positions:
+                    positions,
+
+                  width:
+                    2.2,
+
+                  material:
+
+                    Cesium
+                      .Color
+                      .WHITE
+                      .withAlpha(
+                        .28
+                      ),
+
+                  clampToGround:
+                    true,
+
+                  arcType:
+                    Cesium
+                      .ArcType
+                      .GEODESIC
+
+                }
+
+              });
+
+
+          /*
+          MAIN WHITE BORDER
+          */
+
+
+          const line =
+
+            viewer
+              .entities
+              .add({
+
+                polyline: {
+
+                  positions:
+                    positions,
+
+                  width:
+                    1.2,
+
+                  material:
+
+                    Cesium
+                      .Color
+                      .WHITE
+                      .withAlpha(
+                        .92
+                      ),
+
+                  clampToGround:
+                    true,
+
+                  arcType:
+                    Cesium
+                      .ArcType
+                      .GEODESIC
+
+                }
+
+              });
+
+
+          worldBorderEntities.push(
+
+            halo,
+
+            line
+
+          );
+
+        }
+
+      );
+
+    }
+
+  );
+
+}
+
+
+
+/* =========================================================
+   SELECTED COUNTRY
+========================================================= */
+
+
+function highlightCountry(
+  country
+) {
+
+
+  clearEntityList(
+    selectedBorderEntities
+  );
+
+
+  getCountryRings(
+    country
+  )
+
+  .forEach(
+
+    ring => {
+
+
+      const positions =
+
+        ringToPositions(
+          ring
+        );
+
+
+      const halo =
+
+        viewer
+          .entities
+          .add({
+
+            polyline: {
+
+              positions:
+                positions,
+
+              width:
+                14,
+
+              material:
+
+                Cesium
+                  .Color
+                  .BLACK
+                  .withAlpha(
+                    .98
+                  ),
+
+              clampToGround:
+                true,
+
+              arcType:
+                Cesium
+                  .ArcType
+                  .GEODESIC
+
+            }
+
+          });
+
+
+      const gold =
+
+        viewer
+          .entities
+          .add({
+
+            polyline: {
+
+              positions:
+                positions,
+
+              width:
+                6,
+
+              material:
+
+                Cesium
+                  .Color
+                  .fromCssColorString(
+                    "#FFD54A"
+                  ),
+
+              clampToGround:
+                true,
+
+              arcType:
+                Cesium
+                  .ArcType
+                  .GEODESIC
+
+            }
+
+          });
+
+
+      selectedBorderEntities.push(
+
+        halo,
+
+        gold
+
+      );
+
+    }
+
+  );
+
+}
+
+
+
+/* =========================================================
+   COUNTRY CAMERA
+========================================================= */
+
+
+function countryRectangle(
+  country
+) {
+
+
+  const bbox =
+
+    turf.bbox(
+      country
+    );
+
+
+  return Cesium
+    .Rectangle
+    .fromDegrees(
+
+      bbox[0],
+
+      bbox[1],
+
+      bbox[2],
+
+      bbox[3]
+
+    );
+
+}
+
+
+
+/* =========================================================
+   SAFE CLOUD AREA
+========================================================= */
+
+
+function createSafeArea(
+  country
+) {
+
+
+  const areaKm2 =
+
+    turf.area(
+      country
+    )
+
+    /
+
+    1000000;
+
+
+  const distances =
+
+    areaKm2 > 500000
+
+    ?
+
+    [
+      -55,
+      -40,
+      -25,
+      -15,
+      -5
+    ]
+
+    :
+
+    areaKm2 > 100000
+
+    ?
+
+    [
+      -35,
+      -25,
+      -15,
+      -8,
+      -4
+    ]
+
+    :
+
+    [
+      -12,
+      -8,
+      -4,
+      -2
+    ];
+
+
+
+  for(
+    const distance
+    of distances
+  ) {
+
+
+    try {
+
+
+      const safe =
+
+        turf.buffer(
+
+          country,
+
+          distance,
+
+          {
+
+            units:
+              "kilometers"
+
+          }
+
+        );
+
+
+      if(
+        safe
+      ) {
+
+        return safe;
+
+      }
+
+    }
+
+    catch(error) {}
+
+  }
+
+
+  return country;
+
+}
+
+
+
+/* =========================================================
+   FOCUS COUNTRY
+========================================================= */
+
+
+async function focusCountry(
+
+  country,
+
+  animate = true
+
+) {
+
+
+  if(
+    !country
+  ) {
+
+    return;
+
+  }
+
+
+  selectedCountry =
+    country;
+
+
+  selectedSafeArea =
+
+    createSafeArea(
+      country
+    );
+
+
+  const name =
+
+    countryName(
+      country
+    );
+
+
+  document
+    .getElementById(
+      "countryLabel"
+    )
+    .textContent =
+
+      normalize(name)
+      ===
+      "turkey"
+
+      ?
+
+      "Türkiye"
+
+      :
+
+      name;
+
+
+  clearClouds();
+
+
+  highlightCountry(
+    country
+  );
+
+
+  viewer
+    .camera
+    .flyTo({
+
+      destination:
+
+        countryRectangle(
+          country
+        ),
+
+      duration:
+
+        animate
+        ?
+        1.7
+        :
+        0
+
+    });
+
+
+  setTimeout(
+
+    startCloudFlow,
+
+    animate
+    ?
+    1500
+    :
+    450
+
+  );
+
+}
+
+
+
+/* =========================================================
+   RANDOM CLOUD LOCATION
+========================================================= */
+
+
+function randomPointInsideCountry() {
+
+
+  if(
+    !selectedSafeArea
+  ) {
+
+    return null;
+
+  }
+
+
+  const bbox =
+
+    turf.bbox(
+      selectedSafeArea
+    );
+
+
+  for(
+
+    let attempt = 0;
+
+    attempt < 2500;
+
+    attempt++
+
+  ) {
+
+
+    const lng =
+
+      bbox[0]
+
+      +
+
+      Math.random()
+
+      *
+
+      (
+        bbox[2]
+        -
+        bbox[0]
+      );
+
+
+    const lat =
+
+      bbox[1]
+
+      +
+
+      Math.random()
+
+      *
+
+      (
+        bbox[3]
+        -
+        bbox[1]
+      );
+
+
+    const point =
+
+      turf.point(
+
+        [
+          lng,
+          lat
+        ]
+
+      );
+
+
+    try {
+
+
+      if(
+
+        turf
+          .booleanPointInPolygon(
+
+            point,
+
+            selectedSafeArea
+
+          )
+
+      ) {
+
+
+        return {
+
+          lat:
+            lat,
+
+          lng:
+            lng
+
+        };
+
+      }
+
+    }
+
+    catch(error) {}
+
+  }
+
+
+  return null;
+
+}
+
+
+
+/* =========================================================
+   CLOUDS
+========================================================= */
+
+
+function spawnCloud() {
+
+
+  if(
+    !selectedCountry
+  ) {
+
+    return;
+
+  }
+
+
+  const location =
+
+    randomPointInsideCountry();
+
+
+  if(
+    !location
+  ) {
+
+    return;
+
+  }
+
+
+  const element =
+
+    document
+      .createElement(
+        "div"
+      );
+
+
+  element.className =
+    "cloud";
+
+
+  element.textContent =
+
+    comments[
+
+      Math.floor(
+
+        Math.random()
+
+        *
+
+        comments.length
+
+      )
+
+    ];
+
+
+  document
+    .getElementById(
+      "cloudLayer"
+    )
+    .appendChild(
+      element
+    );
+
+
+  const cloud = {
+
+    id:
+
+      Date.now()
+
+      +
+
+      Math.random(),
+
+    element:
+
+      element,
+
+    position:
+
+      Cesium
+        .Cartesian3
+        .fromDegrees(
+
+          location.lng,
+
+          location.lat,
+
+          6500
+
+        )
+
+  };
+
+
+  cloudObjects.push(
+    cloud
+  );
+
+
+  if(
+    cloudObjects.length
+    >
+    MAX_CLOUDS
+  ) {
+
+
+    const oldest =
+
+      cloudObjects.shift();
+
+
+    oldest
+      .element
+      .remove();
+
+  }
+
+
+  setTimeout(
+
+    ()=> {
+
+
+      cloudObjects =
+
+        cloudObjects.filter(
+
+          item =>
+            item !== cloud
+
+        );
+
+
+      element.remove();
+
+    },
+
+    8000
+
+  );
+
+}
+
+
+
+function scheduleNextCloud() {
+
+
+  cloudTimer =
+
+    setTimeout(
+
+      ()=> {
+
+
+        spawnCloud();
+
+        scheduleNextCloud();
+
+      },
+
+      2200
+
+      +
+
+      Math.random()
+      *
+      3000
+
+    );
+
+}
+
+
+
+function startCloudFlow() {
+
+
+  clearTimeout(
+    cloudTimer
+  );
+
+
+  spawnCloud();
+
+
+  cloudTimer =
+
+    setTimeout(
+
+      ()=> {
+
+
+        spawnCloud();
+
+        scheduleNextCloud();
+
+      },
+
+      2300
+
+    );
+
+}
+
+
+
+function clearClouds() {
+
+
+  clearTimeout(
+    cloudTimer
+  );
+
+
+  cloudObjects.forEach(
+
+    cloud =>
+
+      cloud
+        .element
+        .remove()
+
+  );
+
+
+  cloudObjects =
+    [];
+
+}
+
+
+
+/* =========================================================
+   CLOUD SCREEN POSITION
+========================================================= */
+
+
+function updateCloudPositions() {
+
+
+  cloudObjects.forEach(
+
+    cloud => {
+
+
+      const position =
+
+        Cesium
+          .SceneTransforms
+          .worldToWindowCoordinates(
+
+            viewer.scene,
+
+            cloud.position
+
+          );
+
+
+      if(
+        !position
+      ) {
+
+
+        cloud
+          .element
+          .style
+          .display =
+            "none";
+
+
+        return;
+
+      }
+
+
+      cloud
+        .element
+        .style
+        .display =
+          "block";
+
+
+      cloud
+        .element
+        .style
+        .left =
+
+          position.x
+
+          +
+
+          "px";
+
+
+      cloud
+        .element
+        .style
+        .top =
+
+          position.y
+
+          +
+
+          "px";
+
+    }
+
+  );
+
+}
+
+
+
+/* =========================================================
+   REAL SUN DIRECTION
+========================================================= */
+
+
+const sunInertial =
+  new Cesium.Cartesian3();
+
+
+const sunFixed =
+  new Cesium.Cartesian3();
+
+
+const sunDirection =
+  new Cesium.Cartesian3();
+
+
+const sunProxy =
+  new Cesium.Cartesian3();
+
+
+const icrfMatrix =
+  new Cesium.Matrix3();
+
+
+const cameraRadial =
+  new Cesium.Cartesian3();
+
+
+const directionToSun =
+  new Cesium.Cartesian3();
+
+
+const screenScratch =
+  new Cesium.Cartesian2();
+
+
+
+/* =========================================================
+   FALLBACK SUN
+========================================================= */
+
+
+function approximateSunDirection(
+  date
+) {
+
+
+  const jd =
+
+    date.getTime()
+
+    /
+
+    86400000
+
+    +
+
+    2440587.5;
+
+
+  const n =
+
+    jd
+    -
+    2451545.0;
+
+
+  let L =
+
+    (
+      280.460
+      +
+      0.9856474 * n
+    )
+
+    %
+    360;
+
+
+  let g =
+
+    (
+      357.528
+      +
+      0.9856003 * n
+    )
+
+    %
+    360;
+
+
+  L =
+    (L + 360) % 360;
+
+
+  g =
+    (g + 360) % 360;
+
+
+  const gRad =
+
+    Cesium
+      .Math
+      .toRadians(
+        g
+      );
+
+
+  const lambda =
+
+    Cesium
+      .Math
+      .toRadians(
+
+        L
+
+        +
+
+        1.915
+        *
+        Math.sin(
+          gRad
+        )
+
+        +
+
+        0.020
+        *
+        Math.sin(
+          2 * gRad
+        )
+
+      );
+
+
+  const epsilon =
+
+    Cesium
+      .Math
+      .toRadians(
+
+        23.439
+
+        -
+
+        0.0000004
+        *
+        n
+
+      );
+
+
+  const rightAscension =
+
+    Math.atan2(
+
+      Math.cos(
+        epsilon
+      )
+
+      *
+
+      Math.sin(
+        lambda
+      ),
+
+      Math.cos(
+        lambda
+      )
+
+    );
+
+
+  const declination =
+
+    Math.asin(
+
+      Math.sin(
+        epsilon
+      )
+
+      *
+
+      Math.sin(
+        lambda
+      )
+
+    );
+
+
+  let gmst =
+
+    (
+      280.46061837
+
+      +
+
+      360.98564736629
+
+      *
+
+      (
+        jd
+        -
+        2451545.0
+      )
+    )
+
+    %
+    360;
+
+
+  gmst =
+    (gmst + 360) % 360;
+
+
+  let longitude =
+
+    (
+      (
+        Cesium
+          .Math
+          .toDegrees(
+            rightAscension
+          )
+
+        -
+
+        gmst
+
+        +
+
+        540
+      )
+
+      %
+
+      360
+    )
+
+    -
+
+    180;
+
+
+  longitude =
+
+    Cesium
+      .Math
+      .toRadians(
+        longitude
+      );
+
+
+  sunDirection.x =
+
+    Math.cos(
+      declination
+    )
+
+    *
+
+    Math.cos(
+      longitude
+    );
+
+
+  sunDirection.y =
+
+    Math.cos(
+      declination
+    )
+
+    *
+
+    Math.sin(
+      longitude
+    );
+
+
+  sunDirection.z =
+
+    Math.sin(
+      declination
+    );
+
+
+  return Cesium
+    .Cartesian3
+    .normalize(
+
+      sunDirection,
+
+      sunDirection
+
+    );
+
+}
+
+
+
+/* =========================================================
+   GET REAL SUN
+========================================================= */
+
+
+function getRealSunDirection() {
+
+
+  const time =
+
+    viewer
+      .clock
+      .currentTime;
+
+
+  try {
+
+
+    Cesium
+      .Simon1994PlanetaryPositions
+      .computeSunPositionInEarthInertialFrame(
+
+        time,
+
+        sunInertial
+
+      );
+
+
+    const transform =
+
+      Cesium
+        .Transforms
+        .computeIcrfToFixedMatrix(
+
+          time,
+
+          icrfMatrix
+
+        );
+
+
+    if(
+      Cesium.defined(
+        transform
+      )
+    ) {
+
+
+      Cesium
+        .Matrix3
+        .multiplyByVector(
+
+          transform,
+
+          sunInertial,
+
+          sunFixed
+
+        );
+
+
+      Cesium
+        .Cartesian3
+        .normalize(
+
+          sunFixed,
+
+          sunDirection
+
+        );
+
+
+      return sunDirection;
+
+    }
+
+  }
+
+  catch(error) {}
+
+
+  return approximateSunDirection(
+
+    new Date()
+
+  );
+
+}
+
+
+
+/* =========================================================
+   SUN VISUAL
+========================================================= */
+
+
+const realSun =
+
+  document
+    .getElementById(
+      "realSun"
+    );
+
+
+const sunBloom =
+
+  document
+    .getElementById(
+      "sunBloom"
+    );
+
+
+const sunRays =
+
+  Array.from(
+
+    document
+      .querySelectorAll(
+        ".realSunRay"
+      )
+
+  );
+
+
+
+function updateSunVisuals() {
+
+
+  const direction =
+
+    getRealSunDirection();
+
+
+  Cesium
+    .Cartesian3
+    .multiplyByScalar(
+
+      direction,
+
+      65000000,
+
+      sunProxy
+
+    );
+
+
+  const cameraHeight =
+
+    viewer
+      .camera
+      .positionCartographic
+      .height;
+
+
+  const zoomContribution =
+
+    smoothstep(
+
+      1800000,
+
+      7000000,
+
+      cameraHeight
+
+    );
+
+
+  Cesium
+    .Cartesian3
+    .normalize(
+
+      viewer
+        .camera
+        .positionWC,
+
+      cameraRadial
+
+    );
+
+
+  const hemisphereContribution =
+
+    smoothstep(
+
+      -.30,
+
+      .20,
+
+      Cesium
+        .Cartesian3
+        .dot(
+
+          cameraRadial,
+
+          direction
+
+        )
+
+    );
+
+
+  Cesium
+    .Cartesian3
+    .subtract(
+
+      sunProxy,
+
+      viewer
+        .camera
+        .positionWC,
+
+      directionToSun
+
+    );
+
+
+  Cesium
+    .Cartesian3
+    .normalize(
+
+      directionToSun,
+
+      directionToSun
+
+    );
+
+
+  const facingContribution =
+
+    smoothstep(
+
+      -.80,
+
+      .15,
+
+      Cesium
+        .Cartesian3
+        .dot(
+
+          viewer
+            .camera
+            .directionWC,
+
+          directionToSun
+
+        )
+
+    );
+
+
+  const contribution =
+
+    clamp(
+
+      zoomContribution
+
+      *
+
+      hemisphereContribution
+
+      *
+
+      facingContribution
+
+      *
+
+      SUN_VARIANCE_WEIGHT,
+
+      0,
+
+      1
+
+    );
+
+
+  const screen =
+
+    Cesium
+      .SceneTransforms
+      .worldToWindowCoordinates(
+
+        viewer.scene,
+
+        sunProxy,
+
+        screenScratch
+
+      );
+
+
+  if(
+    !screen
+    ||
+    contribution < .01
+  ) {
+
+
+    realSun.style.opacity =
+      "0";
+
+
+    sunBloom.style.opacity =
+      "0";
+
+
+    sunRays.forEach(
+
+      ray =>
+
+        ray.style.opacity =
+          "0"
+
+    );
+
+
+    return;
+
+  }
+
+
+  const width =
+
+    viewer
+      .scene
+      .canvas
+      .clientWidth;
+
+
+  const height =
+
+    viewer
+      .scene
+      .canvas
+      .clientHeight;
+
+
+  const sunX =
+
+    clamp(
+
+      screen.x,
+
+      -100,
+
+      width + 100
+
+    );
+
+
+  const sunY =
+
+    clamp(
+
+      screen.y,
+
+      -100,
+
+      height + 100
+
+    );
+
+
+  const angle =
+
+    Cesium
+      .Math
+      .toDegrees(
+
+        Math.atan2(
+
+          height / 2
+          -
+          sunY,
+
+          width / 2
+          -
+          sunX
+
+        )
+
+      );
+
+
+  realSun.style.left =
+    sunX + "px";
+
+
+  realSun.style.top =
+    sunY + "px";
+
+
+  realSun.style.opacity =
+
+    String(
+
+      clamp(
+
+        contribution
+        *
+        .95,
+
+        0,
+
+        .95
+
+      )
+
+    );
+
+
+  sunBloom.style.left =
+    sunX + "px";
+
+
+  sunBloom.style.top =
+    sunY + "px";
+
+
+  sunBloom.style.opacity =
+
+    String(
+
+      clamp(
+
+        contribution
+        *
+        .65,
+
+        0,
+
+        .65
+
+      )
+
+    );
+
+
+  sunRays.forEach(
+
+    (
+      ray,
+      index
+    ) => {
+
+
+      const offset =
+
+        Number(
+
+          ray
+            .dataset
+            .offset
+          ||
+          0
+
+        );
+
+
+      ray.style.left =
+        sunX + "px";
+
+
+      ray.style.top =
+
+        (
+          sunY
+
+          +
+
+          (
+            index
+            -
+            1.5
+          )
+
+          *
+
+          15
+        )
+
+        +
+
+        "px";
+
+
+      ray.style.transform =
+
+        `rotate(${angle + offset}deg)`;
+
+
+      ray.style.opacity =
+
+        String(
+
+          contribution
+
+          *
+
+          (
+            index % 2 === 0
+            ?
+            .38
+            :
+            .24
+          )
+
+        );
+
+    }
+
+  );
+
+}
+
+
+
+/* =========================================================
+   SOFT NIGHT SIDE
+
+   This is the new part.
+
+   The real Sun still controls
+   which side is night.
+
+   But night is lifted slightly
+   instead of becoming black.
+========================================================= */
+
+
+const softNightStage =
+
+  new Cesium.PostProcessStage({
+
+    name:
+      "notron-soft-night",
+
+
+    fragmentShader:
+    `
+
+      uniform sampler2D colorTexture;
+
+      uniform sampler2D depthTexture;
+
+      in vec2 v_textureCoordinates;
+
+
+      uniform vec3 u_sunDirection;
+
+      uniform float u_nightVisibility;
+
+
+
+      void main() {
+
+
+        vec4 color =
+
+          texture(
+
+            colorTexture,
+
+            v_textureCoordinates
+
+          );
+
+
+        float depth =
+
+          czm_unpackDepth(
+
+            texture(
+
+              depthTexture,
+
+              v_textureCoordinates
+
+            )
+
+          );
+
+
+
+        /*
+        No Earth geometry.
+
+        Keep space / stars untouched.
+        */
+
+
+        if(
+          depth == 0.0
+        ) {
+
+          out_FragColor =
+            color;
+
+          return;
+
+        }
+
+
+
+        /*
+        Convert pixel location
+        back into world position.
+        */
+
+
+        vec4 eye =
+
+          czm_windowToEyeCoordinates(
+
+            gl_FragCoord.xy,
+
+            depth
+
+          );
+
+
+        vec4 world =
+
+          czm_inverseView
+          *
+          eye;
+
+
+
+        /*
+        Approximate Earth's
+        surface normal.
+        */
+
+
+        vec3 surfaceNormal =
+
+          normalize(
+
+            world.xyz
+
+          );
+
+
+
+        /*
+        Compare point on Earth
+        to actual Sun direction.
+        */
+
+
+        float sunDot =
+
+          dot(
+
+            surfaceNormal,
+
+            normalize(
+              u_sunDirection
+            )
+
+          );
+
+
+
+        /*
+        1 = night
+
+        0 = day
+
+        smooth twilight zone.
+        */
+
+
+        float nightMask =
+
+          1.0
+
+          -
+
+          smoothstep(
+
+            -0.08,
+
+            0.14,
+
+            sunDot
+
+          );
+
+
+
+        /*
+        Lift dark pixels.
+
+        Still dark,
+        but no longer black.
+        */
+
+
+        vec3 liftedNight =
+
+          max(
+
+            pow(
+
+              max(
+
+                color.rgb,
+
+                vec3(0.0)
+
+              ),
+
+              vec3(0.72)
+
+            ),
+
+            vec3(0.075)
+
+          );
+
+
+        liftedNight +=
+
+          vec3(
+
+            0.015,
+
+            0.020,
+
+            0.030
+
+          );
+
+
+
+        float amount =
+
+          nightMask
+
+          *
+
+          u_nightVisibility;
+
+
+
+        vec3 result =
+
+          mix(
+
+            color.rgb,
+
+            liftedNight,
+
+            amount
+
+          );
+
+
+        out_FragColor =
+
+          vec4(
+
+            result,
+
+            color.a
+
+          );
+
+      }
+
+    `,
+
+
+    uniforms: {
+
+
+      u_sunDirection:
+
+        () =>
+
+          Cesium
+            .Cartesian3
+            .clone(
+
+              getRealSunDirection()
+
+            ),
+
+
+      u_nightVisibility:
+
+        NIGHT_VISIBILITY
+
+    }
+
+  });
+
+
+viewer
+  .scene
+  .postProcessStages
+  .add(
+
+    softNightStage
+
+  );
+
+
+
+/* =========================================================
+   RENDER LOOP
+========================================================= */
+
+
+viewer
+.scene
+.postRender
+.addEventListener(
+
+  ()=> {
+
+
+    updateCloudPositions();
+
+
+    updateSunVisuals();
+
+  }
+
+);
+
+
+
+/* =========================================================
+   SEARCH ACTION
+========================================================= */
+
+
+document
+.getElementById(
+  "search"
+)
+.addEventListener(
+
+  "submit",
+
+  event => {
+
+
+    event.preventDefault();
+
+
+    const country =
+
+      findCountry(
+
+        document
+          .getElementById(
+            "countryInput"
+          )
+          .value
+
+      );
+
+
+    if(
+      country
+    ) {
+
+
+      focusCountry(
+
+        country,
+
+        true
+
+      );
+
+
+      document
+        .getElementById(
+          "countryInput"
+        )
+        .blur();
+
+    }
+
+  }
+
+);
+
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+
+async function initialize() {
+
+
+  try {
+
+
+    await loadSatelliteImagery();
+
+
+
+    const response =
+
+      await fetch(
+
+        "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
+
+      );
+
+
+    if(
+      !response.ok
+    ) {
+
+
+      throw new Error(
+
+        "Country data could not load."
+
+      );
+
+    }
+
+
+    const data =
+
+      await response.json();
+
+
+    countries =
+
+      data.features;
+
+
+
+    /*
+    Draw strong borders.
+    */
+
+
+    drawWorldBorders();
+
+
+
+    /*
+    Default = Türkiye.
+    */
+
+
+    const turkey =
+
+      countries.find(
+
+        country =>
+
+          normalize(
+
+            countryName(
+              country
+            )
+
+          )
+
+          ===
+
+          "turkey"
+
+      );
+
+
+    if(
+      !turkey
+    ) {
+
+
+      throw new Error(
+
+        "Türkiye was not found."
+
+      );
+
+    }
+
+
+    await focusCountry(
+
+      turkey,
+
+      false
+
+    );
+
+  }
+
+
+  catch(error) {
+
+
+    showError(
+      error
+    );
+
+  }
+
+}
+
+
+
+initialize();
+
+
+</script>
+
+</body>
+</html>
