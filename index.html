@@ -767,6 +767,79 @@ world
 ============================================= */
 
 
+let cloudTimer = null;
+let activeClouds = [];
+
+function spawnCloud(){
+
+  if(
+    !selectedCountry ||
+    !isTurkey(selectedCountry)
+  ) return;
+
+  const spot =
+    randomPointInside(selectedCountry);
+
+  const cloud = {
+
+    id:
+      Date.now() + Math.random(),
+
+    lat:
+      spot.lat,
+
+    lng:
+      spot.lng,
+
+    delay:
+      0,
+
+    text:
+      TURKEY_COMMUNE.comments[
+        Math.floor(
+          Math.random() *
+          TURKEY_COMMUNE.comments.length
+        )
+      ]
+
+  };
+
+
+  activeClouds.push(cloud);
+
+  // maximum 3 visible
+  if(activeClouds.length > 3){
+    activeClouds.shift();
+  }
+
+  world.htmlElementsData(
+    [...activeClouds]
+  );
+
+
+  // cloud disappears later
+  setTimeout(() => {
+
+    activeClouds =
+      activeClouds.filter(
+        c => c.id !== cloud.id
+      );
+
+    world.htmlElementsData(
+      [...activeClouds]
+    );
+
+  }, 7500);
+
+
+  // next cloud appears at random time
+  cloudTimer =
+    setTimeout(
+      spawnCloud,
+      2200 + Math.random() * 3000
+    );
+}
+  
 function randomPointInside(country){
 
   const bounds = d3.geoBounds(country);
