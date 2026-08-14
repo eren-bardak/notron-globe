@@ -1,103 +1,1386 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8">
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-  />
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+/>
 
-  <script src="https://unpkg.com/globe.gl"></script>
+<title>Notron Commune</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: black;
-    }
+<script src="https://unpkg.com/globe.gl"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-geo@3"></script>
 
-    #globe {
-      width: 100vw;
-      height: 100vh;
-    }
-  </style>
+<style>
+
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+#globe{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100vh;
+}
+
+
+/* =========================
+   TOP UI
+========================= */
+
+#top{
+  position:fixed;
+
+  top:24px;
+  left:50%;
+
+  transform:translateX(-50%);
+
+  z-index:100;
+
+  width:min(90vw,430px);
+
+  pointer-events:none;
+}
+
+
+#countrySearch{
+  pointer-events:auto;
+
+  display:flex;
+
+  padding:7px;
+
+  gap:7px;
+
+  border-radius:18px;
+
+  background:rgba(5,10,18,.68);
+
+  border:1px solid rgba(255,255,255,.13);
+
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+
+  box-shadow:0 15px 40px rgba(0,0,0,.35);
+}
+
+
+#countryInput{
+  flex:1;
+
+  border:none;
+  outline:none;
+
+  border-radius:13px;
+
+  padding:12px 14px;
+
+  color:white;
+
+  background:rgba(255,255,255,.07);
+
+  font-size:15px;
+}
+
+
+#countryInput::placeholder{
+  color:rgba(255,255,255,.45);
+}
+
+
+#focusButton{
+  border:none;
+
+  padding:0 17px;
+
+  border-radius:13px;
+
+  background:white;
+
+  color:#07101d;
+
+  font-weight:700;
+
+  cursor:pointer;
+}
+
+
+
+/* =========================
+   COMMUNE LABEL
+========================= */
+
+#communeStatus{
+
+  width:max-content;
+
+  max-width:90%;
+
+  margin:9px auto 0;
+
+  padding:7px 12px;
+
+  border-radius:999px;
+
+  color:rgba(255,255,255,.65);
+
+  background:rgba(5,10,18,.52);
+
+  border:1px solid rgba(255,255,255,.09);
+
+  backdrop-filter:blur(12px);
+
+  font-size:11px;
+
+  letter-spacing:.03em;
+}
+
+
+#communeStatus strong{
+  color:white;
+}
+
+
+
+/* =========================
+   CLOUD
+========================= */
+
+.cloudAnchor{
+
+  pointer-events:none;
+
+  user-select:none;
+}
+
+
+.cloud{
+
+  --delay:0s;
+
+  position:relative;
+
+  min-width:92px;
+  max-width:125px;
+
+  padding:11px 14px;
+
+  border-radius:999px;
+
+  text-align:center;
+
+  color:#17263a;
+
+  font-size:10px;
+
+  font-weight:700;
+
+
+  background:
+
+    radial-gradient(
+      circle at 25% 25%,
+      white 0 25%,
+      transparent 27%
+    ),
+
+    radial-gradient(
+      circle at 52% 15%,
+      white 0 32%,
+      transparent 34%
+    ),
+
+    radial-gradient(
+      circle at 78% 30%,
+      #f9fcff 0 26%,
+      transparent 28%
+    ),
+
+    linear-gradient(
+      180deg,
+      #ffffff 0%,
+      #edf7ff 72%,
+      #dceeff 100%
+    );
+
+
+  box-shadow:
+
+    0 8px 22px rgba(0,0,0,.25),
+
+    0 0 18px rgba(130,210,255,.28),
+
+    inset 0 -6px 12px rgba(80,150,210,.12);
+
+
+  animation:
+
+    appearDisappear
+    9s
+    cubic-bezier(.22,.7,.25,1)
+    infinite,
+
+    drift
+    5s
+    ease-in-out
+    infinite
+    alternate;
+
+
+  animation-delay:
+    var(--delay),
+    var(--delay);
+
+
+  transform-origin:center;
+}
+
+
+
+.cloud::before{
+
+  content:"";
+
+  position:absolute;
+
+  width:38px;
+  height:38px;
+
+  border-radius:50%;
+
+  background:#fff;
+
+  left:15px;
+  top:-15px;
+
+  z-index:-1;
+}
+
+
+
+.cloud::after{
+
+  content:"";
+
+  position:absolute;
+
+  width:44px;
+  height:44px;
+
+  border-radius:50%;
+
+  background:#fbfdff;
+
+  right:13px;
+  top:-18px;
+
+  z-index:-1;
+}
+
+
+
+@keyframes appearDisappear{
+
+  0%{
+
+    opacity:0;
+
+    transform:
+      translateY(16px)
+      scale(.65);
+
+    filter:blur(4px);
+  }
+
+
+  12%{
+
+    opacity:0;
+  }
+
+
+  21%{
+
+    opacity:1;
+
+    transform:
+      translateY(0)
+      scale(1);
+
+    filter:blur(0);
+  }
+
+
+  66%{
+
+    opacity:1;
+
+    transform:
+      translateY(-5px)
+      scale(1);
+  }
+
+
+  82%{
+
+    opacity:0;
+
+    transform:
+      translateY(-17px)
+      scale(.92);
+
+    filter:blur(2px);
+  }
+
+
+  100%{
+
+    opacity:0;
+
+    transform:
+      translateY(-24px)
+      scale(.85);
+
+    filter:blur(3px);
+  }
+
+}
+
+
+
+@keyframes drift{
+
+  from{
+    margin-left:-7px;
+  }
+
+  to{
+    margin-left:8px;
+  }
+
+}
+
+
+
+/* =========================
+   BOTTOM
+========================= */
+
+#instructions{
+
+  position:fixed;
+
+  bottom:18px;
+
+  left:50%;
+
+  transform:translateX(-50%);
+
+  z-index:100;
+
+  color:rgba(255,255,255,.42);
+
+  font-size:10px;
+
+  letter-spacing:.04em;
+
+  white-space:nowrap;
+
+  pointer-events:none;
+}
+
+
+
+</style>
 </head>
+
+
 
 <body>
 
+
 <div id="globe"></div>
+
+
+
+<div id="top">
+
+  <form id="countrySearch">
+
+    <input
+      id="countryInput"
+      placeholder="Search country..."
+      autocomplete="off"
+    >
+
+    <button
+      id="focusButton"
+      type="submit"
+    >
+      Focus
+    </button>
+
+  </form>
+
+
+  <div id="communeStatus">
+
+    <strong id="countryLabel">
+      Türkiye
+    </strong>
+
+    · Commune · Anonymous reactions
+
+  </div>
+
+</div>
+
+
+
+<div id="instructions">
+
+drag to rotate · pinch / scroll to zoom
+
+</div>
+
+
 
 <script>
 
-const world = Globe()
-  (document.getElementById("globe"))
 
-  .globeImageUrl(
-    "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+/* =============================================
+   CREATE 3D EARTH
+============================================= */
+
+
+const world = Globe()(
+  document.getElementById("globe")
+);
+
+
+world
+
+.globeImageUrl(
+  "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
+)
+
+.bumpImageUrl(
+  "https://unpkg.com/three-globe/example/img/earth-topology.png"
+)
+
+.backgroundImageUrl(
+  "https://unpkg.com/three-globe/example/img/night-sky.png"
+)
+
+.showAtmosphere(true)
+
+.atmosphereColor(
+  "#64bfff"
+)
+
+.atmosphereAltitude(
+  0.16
+);
+
+
+
+/* =============================================
+   CONTROLS
+============================================= */
+
+
+const controls =
+  world.controls();
+
+
+controls.enableRotate =
+  true;
+
+
+controls.enableZoom =
+  true;
+
+
+controls.enablePan =
+  false;
+
+
+controls.enableDamping =
+  true;
+
+
+controls.dampingFactor =
+  0.08;
+
+
+controls.autoRotate =
+  false;
+
+
+
+/* =============================================
+   DATA
+============================================= */
+
+
+let countries = [];
+
+let selectedCountry = null;
+
+
+
+/* =============================================
+   TÜRKİYE COMMUNE
+============================================= */
+
+
+const TURKEY_COMMUNE = {
+
+
+  name:
+    "Türkiye",
+
+
+  camera:{
+
+    lat:39,
+
+    lng:35,
+
+    altitude:0.28
+
+  },
+
+
+  /*
+  These are visual reaction areas.
+
+  They DO NOT represent
+  the user's real location.
+  */
+
+
+  cloudLocations:[
+
+
+    {
+      lat:41.00,
+      lng:29.00
+    },
+
+
+    {
+      lat:39.90,
+      lng:32.85
+    },
+
+
+    {
+      lat:38.42,
+      lng:27.14
+    },
+
+
+    {
+      lat:37.87,
+      lng:32.48
+    },
+
+
+    {
+      lat:38.73,
+      lng:35.48
+    },
+
+
+    {
+      lat:37.07,
+      lng:37.38
+    }
+
+
+  ],
+
+
+
+  comments:[
+
+    "Mantıklı",
+
+    "Katılıyorum",
+
+    "Bence iyi",
+
+    "Emin değilim",
+
+    "Olabilir",
+
+    "Neden?",
+
+    "Kararsızım",
+
+    "Destekliyorum",
+
+    "Riskli olabilir",
+
+    "İyi düşünülmeli",
+
+    "Bence hayır",
+
+    "Daha adil olur"
+
+  ]
+
+};
+
+
+
+/* =============================================
+   NORMALIZE COUNTRY NAME
+============================================= */
+
+
+function normalize(text){
+
+  return String(text || "")
+
+  .toLowerCase()
+
+  .replaceAll(
+    "ı",
+    "i"
   )
 
-  .bumpImageUrl(
-    "https://unpkg.com/three-globe/example/img/earth-topology.png"
+  .normalize(
+    "NFD"
   )
 
-  .backgroundImageUrl(
-    "https://unpkg.com/three-globe/example/img/night-sky.png"
+  .replace(
+    /[\u0300-\u036f]/g,
+    ""
   )
 
-  .showAtmosphere(true)
+  .replace(
+    /[^a-z0-9]/g,
+    ""
+  );
 
-  .atmosphereColor("#4da6ff")
-
-  .atmosphereAltitude(0.18);
-
-
-// Starting camera
-world.pointOfView({
-  lat: 25,
-  lng: 25,
-  altitude: 2.2
-});
+}
 
 
-// Controls
-const controls = world.controls();
 
-controls.enableRotate = true;
-
-controls.enableZoom = true;
-
-controls.enablePan = false;
+/* =============================================
+   COUNTRY COMMUNE CHECK
+============================================= */
 
 
-// Zoom limits
-controls.minDistance = 105;
+function isTurkey(country){
 
-controls.maxDistance = 500;
-
-
-// Slow automatic rotation
-controls.autoRotate = true;
-
-controls.autoRotateSpeed = 0.20;
+  if(!country)
+    return false;
 
 
-// Stop rotation when user interacts
-document.addEventListener("pointerdown", () => {
-  controls.autoRotate = false;
-});
+  return (
+
+    normalize(
+      country.properties.name
+    )
+
+    ===
+
+    "turkey"
+
+  );
+
+}
 
 
-// Responsive
-window.addEventListener("resize", () => {
+
+/* =============================================
+   CLOUD ELEMENT
+============================================= */
+
+
+function makeCloud(item){
+
+
+  const root =
+    document.createElement(
+      "div"
+    );
+
+
+  root.className =
+    "cloudAnchor";
+
+
+
+  const cloud =
+    document.createElement(
+      "div"
+    );
+
+
+  cloud.className =
+    "cloud";
+
+
+  cloud.style.setProperty(
+    "--delay",
+    `${item.delay}s`
+  );
+
+
+  cloud.innerText =
+    item.text;
+
+
+
+  /*
+  Change comment after
+  every animation cycle.
+  */
+
+
+  cloud.addEventListener(
+
+    "animationiteration",
+
+    ()=>{
+
+
+      const comments =
+        TURKEY_COMMUNE.comments;
+
+
+      cloud.innerText =
+
+        comments[
+          Math.floor(
+            Math.random() *
+            comments.length
+          )
+        ];
+
+    }
+
+  );
+
+
+  root.appendChild(
+    cloud
+  );
+
+
+  return root;
+
+}
+
+
+
+/* =============================================
+   CONFIGURE HTML CLOUD LAYER
+============================================= */
+
+
+world
+
+.htmlLat(
+  "lat"
+)
+
+.htmlLng(
+  "lng"
+)
+
+.htmlAltitude(
+  0.035
+)
+
+.htmlElement(
+  makeCloud
+);
+
+
+
+/* =============================================
+   SHOW TÜRKİYE CLOUDS
+============================================= */
+
+
+function showTurkeyClouds(){
+
+
+  const cloudData =
+
+    TURKEY_COMMUNE
+    .cloudLocations
+
+    .map(
+
+      (spot,index)=>({
+
+        lat:
+          spot.lat,
+
+        lng:
+          spot.lng,
+
+        delay:
+          -(index * 1.35),
+
+        text:
+
+          TURKEY_COMMUNE
+          .comments[index]
+
+      })
+
+    );
+
+
+  world.htmlElementsData(
+    cloudData
+  );
+
+}
+
+
+
+/* =============================================
+   COUNTRY POLYGONS
+============================================= */
+
+
+function styleCountries(){
+
 
   world
-    .width(window.innerWidth)
-    .height(window.innerHeight);
 
-});
+
+  .polygonAltitude(
+
+    country =>
+
+      country === selectedCountry
+
+      ? 0.012
+
+      : 0.003
+
+  )
+
+
+  .polygonCapColor(
+
+    country =>
+
+      country === selectedCountry
+
+      ?
+
+      "rgba(255,205,80,.10)"
+
+      :
+
+      "rgba(0,0,0,0)"
+
+  )
+
+
+  .polygonSideColor(
+
+    ()=>"rgba(0,0,0,0)"
+
+  )
+
+
+  .polygonStrokeColor(
+
+    country =>
+
+      country === selectedCountry
+
+      ?
+
+      "rgba(255,220,120,.95)"
+
+      :
+
+      "rgba(255,255,255,.22)"
+
+  )
+
+  .polygonsTransitionDuration(
+    500
+  );
+
+}
+
+
+
+/* =============================================
+   FIT CAMERA
+============================================= */
+
+
+function automaticAltitude(country){
+
+
+  const bounds =
+    d3.geoBounds(
+      country
+    );
+
+
+  let longitudeSize =
+
+    Math.abs(
+
+      bounds[1][0]
+
+      -
+
+      bounds[0][0]
+
+    );
+
+
+  const latitudeSize =
+
+    Math.abs(
+
+      bounds[1][1]
+
+      -
+
+      bounds[0][1]
+
+    );
+
+
+  if(
+    longitudeSize > 180
+  ){
+
+    longitudeSize =
+      latitudeSize;
+
+  }
+
+
+  const size =
+
+    Math.max(
+
+      longitudeSize,
+
+      latitudeSize
+
+    );
+
+
+  return Math.max(
+
+    0.20,
+
+    Math.min(
+
+      0.8,
+
+      0.12 +
+      size * 0.011
+
+    )
+
+  );
+
+}
+
+
+
+/* =============================================
+   FOCUS COUNTRY
+============================================= */
+
+
+function focusCountry(
+  country
+){
+
+
+  if(!country)
+    return;
+
+
+  selectedCountry =
+    country;
+
+
+  const name =
+    country.properties.name;
+
+
+  document
+  .getElementById(
+    "countryLabel"
+  )
+  .innerText =
+
+    isTurkey(country)
+
+    ?
+
+    "Türkiye"
+
+    :
+
+    name;
+
+
+
+  /*
+  TÜRKİYE
+  */
+
+
+  if(
+    isTurkey(country)
+  ){
+
+
+    world.pointOfView(
+
+      TURKEY_COMMUNE.camera,
+
+      1500
+
+    );
+
+
+    showTurkeyClouds();
+
+  }
+
+
+  /*
+  OTHER COUNTRY
+  */
+
+
+  else{
+
+
+    const center =
+
+      d3.geoCentroid(
+        country
+      );
+
+
+    world.pointOfView(
+
+      {
+
+        lat:
+          center[1],
+
+        lng:
+          center[0],
+
+        altitude:
+          automaticAltitude(
+            country
+          )
+
+      },
+
+      1500
+
+    );
+
+
+    /*
+    We haven't created
+    the commune for this
+    country yet.
+    */
+
+
+    world.htmlElementsData(
+      []
+    );
+
+  }
+
+
+  styleCountries();
+
+
+  world.polygonsData(
+    countries
+  );
+
+}
+
+
+
+/* =============================================
+   FIND COUNTRY
+============================================= */
+
+
+function findCountry(
+  search
+){
+
+
+  const value =
+    normalize(search);
+
+
+
+  if(
+
+    value === "turkiye"
+
+    ||
+
+    value === "turkey"
+
+  ){
+
+
+    return countries.find(
+
+      country =>
+
+        normalize(
+          country.properties.name
+        )
+
+        ===
+
+        "turkey"
+
+    );
+
+  }
+
+
+
+  return countries.find(
+
+    country =>
+
+      normalize(
+        country.properties.name
+      )
+
+      ===
+
+      value
+
+  )
+
+  ||
+
+  countries.find(
+
+    country =>
+
+      normalize(
+        country.properties.name
+      )
+
+      .includes(
+        value
+      )
+
+  );
+
+}
+
+
+
+/* =============================================
+   LOAD WORLD
+============================================= */
+
+
+fetch(
+
+"https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
+
+)
+
+
+.then(
+  response =>
+    response.json()
+)
+
+
+.then(
+  data =>{
+
+
+    countries =
+      data.features;
+
+
+    world.polygonsData(
+      countries
+    );
+
+
+    styleCountries();
+
+
+
+    /*
+    Start with Türkiye.
+    */
+
+
+    const turkey =
+
+      countries.find(
+
+        country =>
+
+          normalize(
+            country.properties.name
+          )
+
+          ===
+
+          "turkey"
+
+      );
+
+
+    focusCountry(
+      turkey
+    );
+
+  }
+
+);
+
+
+
+/* =============================================
+   SEARCH
+============================================= */
+
+
+document
+
+.getElementById(
+  "countrySearch"
+)
+
+.addEventListener(
+
+  "submit",
+
+  event =>{
+
+
+    event.preventDefault();
+
+
+    const value =
+
+      document
+      .getElementById(
+        "countryInput"
+      )
+      .value;
+
+
+    const country =
+      findCountry(
+        value
+      );
+
+
+    if(country){
+
+      focusCountry(
+        country
+      );
+
+    }
+
+  }
+
+);
+
+
+
+/* =============================================
+   CLICK COUNTRY
+============================================= */
+
+
+world.onPolygonClick(
+
+  country =>{
+
+    focusCountry(
+      country
+    );
+
+  }
+
+);
+
+
+
+/* =============================================
+   RESPONSIVE
+============================================= */
+
+
+function resize(){
+
+
+  world
+
+  .width(
+    window.innerWidth
+  )
+
+  .height(
+    window.innerHeight
+  );
+
+}
+
+
+window.addEventListener(
+  "resize",
+  resize
+);
+
+
+resize();
+
 
 </script>
 
