@@ -1,620 +1,2453 @@
-<!-- =========================================================
-     NOTRON — REAL SUN POSITION + DYNAMIC SUN RAYS
-     
-     Paste this whole block immediately before </body>
-     
-     Uses:
-     - real current date/time
-     - astronomical Sun position
-     - real Cesium globe illumination
-     - real day/night direction
-     - sun-position-based ray direction
-     - camera angle
-     - camera zoom
-     
-     SUN_VARIANCE_WEIGHT controls how strongly sunlight
-     contributes to the visual experience.
-========================================================= -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+/>
+
+<title>Notron Commune</title>
+
+
+<!-- CESIUM -->
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Cesium.js"></script>
+
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Widgets/widgets.css"
+/>
+
+
+<!-- TURF -->
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#cesiumContainer {
+
+  width: 100%;
+  height: 100%;
+
+  margin: 0;
+  padding: 0;
+
+  overflow: hidden;
+
+  background: #000;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+
+/* =====================================================
+   CESIUM
+===================================================== */
+
+.cesium-viewer-toolbar {
+  display: none !important;
+}
+
+
+/* =====================================================
+   SEARCH UI
+===================================================== */
+
+#ui {
+
+  position: fixed;
+
+  top: 24px;
+  left: 50%;
+
+  transform: translateX(-50%);
+
+  width: min(90vw, 440px);
+
+  z-index: 1000;
+}
+
+
+#search {
+
+  display: flex;
+
+  gap: 8px;
+
+  padding: 8px;
+
+  border-radius: 20px;
+
+  background:
+    rgba(5,11,22,.76);
+
+  border:
+    1px solid rgba(255,255,255,.13);
+
+  backdrop-filter:
+    blur(18px);
+
+  -webkit-backdrop-filter:
+    blur(18px);
+
+  box-shadow:
+    0 15px 40px rgba(0,0,0,.35);
+}
+
+
+#countryInput {
+
+  flex: 1;
+
+  min-width: 0;
+
+  border: none;
+  outline: none;
+
+  padding: 13px 15px;
+
+  border-radius: 14px;
+
+  background:
+    rgba(255,255,255,.08);
+
+  color: white;
+
+  font-size: 15px;
+}
+
+
+#countryInput::placeholder {
+
+  color:
+    rgba(255,255,255,.5);
+}
+
+
+#focusButton {
+
+  border: none;
+
+  border-radius: 14px;
+
+  padding: 0 18px;
+
+  background: white;
+
+  color: #09111d;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+#status {
+
+  width: max-content;
+
+  max-width: 90%;
+
+  margin: 9px auto 0;
+
+  padding: 7px 13px;
+
+  border-radius: 999px;
+
+  background:
+    rgba(5,11,22,.65);
+
+  border:
+    1px solid rgba(255,255,255,.10);
+
+  backdrop-filter:
+    blur(12px);
+
+  color:
+    rgba(255,255,255,.65);
+
+  font-size: 11px;
+}
+
+
+#status strong {
+  color: white;
+}
+
+
+/* =====================================================
+   CLOUD LAYER
+===================================================== */
+
+#cloudLayer {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 500;
+
+  pointer-events: none;
+
+  overflow: hidden;
+}
+
+
+/* =====================================================
+   CLOUD
+===================================================== */
+
+.cloud {
+
+  position: absolute;
+
+  min-width: 68px;
+  max-width: 100px;
+
+  padding: 8px 11px;
+
+  border-radius: 999px;
+
+  color: #142336;
+
+  font-size: 9px;
+
+  font-weight: 700;
+
+  text-align: center;
+
+  opacity: 0;
+
+
+  background:
+
+    radial-gradient(
+      circle at 27% 27%,
+      white 0 28%,
+      transparent 30%
+    ),
+
+    radial-gradient(
+      circle at 53% 17%,
+      white 0 34%,
+      transparent 36%
+    ),
+
+    radial-gradient(
+      circle at 77% 31%,
+      #f9fcff 0 27%,
+      transparent 29%
+    ),
+
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #e3f2ff
+    );
+
+
+  box-shadow:
+
+    0 8px 20px
+    rgba(0,0,0,.25),
+
+    0 0 18px
+    rgba(175,220,255,.30);
+
+
+  transform:
+    translate(-50%,-50%)
+    scale(.15);
+
+
+  animation:
+
+    cloudLife
+    8s
+    ease-in-out
+    forwards,
+
+    cloudFloat
+    5s
+    ease-in-out
+    infinite
+    alternate;
+}
+
+
+.cloud::before {
+
+  content: "";
+
+  position: absolute;
+
+  width: 29px;
+  height: 29px;
+
+  left: 13px;
+  top: -12px;
+
+  border-radius: 50%;
+
+  background: white;
+
+  z-index: -1;
+}
+
+
+.cloud::after {
+
+  content: "";
+
+  position: absolute;
+
+  width: 35px;
+  height: 35px;
+
+  right: 13px;
+  top: -15px;
+
+  border-radius: 50%;
+
+  background: #f9fcff;
+
+  z-index: -1;
+}
+
+
+@keyframes cloudLife {
+
+  0% {
+
+    opacity: 0;
+
+    transform:
+      translate(-50%,-50%)
+      translateY(10px)
+      scale(.15);
+
+    filter: blur(3px);
+  }
+
+
+  15% {
+
+    opacity: 1;
+
+    transform:
+      translate(-50%,-50%)
+      scale(1);
+
+    filter: blur(0);
+  }
+
+
+  68% {
+
+    opacity: 1;
+
+    transform:
+      translate(-50%,-50%)
+      translateY(-4px)
+      scale(1);
+  }
+
+
+  100% {
+
+    opacity: 0;
+
+    transform:
+      translate(-50%,-50%)
+      translateY(-18px)
+      scale(.82);
+
+    filter: blur(2px);
+  }
+}
+
+
+@keyframes cloudFloat {
+
+  from {
+    margin-left: -5px;
+    margin-top: 3px;
+  }
+
+  to {
+    margin-left: 7px;
+    margin-top: -5px;
+  }
+}
+
+
+/* =====================================================
+   REAL SUN OVERLAY
+===================================================== */
+
+#sunLayer {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 25;
+
+  pointer-events: none;
+
+  overflow: hidden;
+}
+
+
+/* Sun glow */
+
+#realSun {
+
+  position: absolute;
+
+  width: 105px;
+  height: 105px;
+
+  margin-left: -52px;
+  margin-top: -52px;
+
+  border-radius: 50%;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  mix-blend-mode: screen;
+
+
+  background:
+
+    radial-gradient(
+      circle,
+
+      rgba(255,255,250,1) 0%,
+
+      rgba(255,248,210,.98) 8%,
+
+      rgba(255,220,130,.88) 18%,
+
+      rgba(255,180,70,.48) 32%,
+
+      rgba(255,135,30,.15) 50%,
+
+      transparent 72%
+    );
+
+
+  box-shadow:
+
+    0 0 35px
+    rgba(255,245,190,.95),
+
+    0 0 80px
+    rgba(255,210,110,.65),
+
+    0 0 170px
+    rgba(255,170,55,.35),
+
+    0 0 280px
+    rgba(255,130,30,.15);
+}
+
+
+/* =====================================================
+   REAL SUN RAYS
+===================================================== */
+
+.realSunRay {
+
+  position: absolute;
+
+  left: 0;
+  top: 0;
+
+  width: max(135vw, 1500px);
+
+  height: 95px;
+
+  opacity: 0;
+
+  transform-origin:
+    0 50%;
+
+  filter:
+    blur(24px);
+
+  mix-blend-mode:
+    screen;
+
+  pointer-events:
+    none;
+
+
+  background:
+
+    linear-gradient(
+      90deg,
+
+      rgba(255,247,205,.34) 0%,
+
+      rgba(255,226,150,.22) 12%,
+
+      rgba(255,199,105,.12) 32%,
+
+      rgba(255,175,70,.05) 55%,
+
+      transparent 78%
+    );
+}
+
+
+.realSunRay.soft {
+
+  height: 170px;
+
+  filter:
+    blur(44px);
+}
+
+
+/* =====================================================
+   SUBTLE SUN BLOOM
+===================================================== */
+
+#sunBloom {
+
+  position: absolute;
+
+  width: 430px;
+  height: 430px;
+
+  margin-left: -215px;
+  margin-top: -215px;
+
+  border-radius: 50%;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  mix-blend-mode:
+    screen;
+
+
+  background:
+
+    radial-gradient(
+      circle,
+
+      rgba(255,225,150,.10),
+
+      rgba(255,185,90,.045) 35%,
+
+      transparent 70%
+    );
+
+  filter:
+    blur(20px);
+}
+
+
+/* =====================================================
+   VIGNETTE
+===================================================== */
+
+#vignette {
+
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 30;
+
+  pointer-events: none;
+
+  box-shadow:
+
+    inset 0 0 90px
+    rgba(0,0,0,.18);
+}
+
+
+/* =====================================================
+   ERROR DISPLAY
+===================================================== */
+
+#errorPanel {
+
+  display: none;
+
+  position: fixed;
+
+  left: 50%;
+  bottom: 35px;
+
+  transform:
+    translateX(-50%);
+
+  z-index: 2000;
+
+  max-width: 90%;
+
+  padding: 12px 18px;
+
+  border-radius: 12px;
+
+  background:
+    rgba(130,20,20,.92);
+
+  color: white;
+
+  font-size: 12px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div id="cesiumContainer"></div>
+
+
+<!-- REAL SUN -->
+
+<div id="sunLayer">
+
+  <div id="sunBloom"></div>
+
+  <div
+    class="realSunRay"
+    data-offset="-4">
+  </div>
+
+  <div
+    class="realSunRay soft"
+    data-offset="-1.5">
+  </div>
+
+  <div
+    class="realSunRay"
+    data-offset="2">
+  </div>
+
+  <div
+    class="realSunRay soft"
+    data-offset="5">
+  </div>
+
+  <div id="realSun"></div>
+
+</div>
+
+
+<div id="vignette"></div>
+
+
+<!-- SEARCH -->
+
+<div id="ui">
+
+<form id="search">
+
+<input
+  id="countryInput"
+  placeholder="Search country..."
+  autocomplete="off"
+/>
+
+<button
+  id="focusButton"
+  type="submit">
+
+Focus
+
+</button>
+
+</form>
+
+
+<div id="status">
+
+<strong id="countryLabel">
+Türkiye
+</strong>
+
+· Commune · Anonymous reactions
+
+</div>
+
+</div>
+
+
+<div id="cloudLayer"></div>
+
+
+<div id="errorPanel"></div>
+
 
 <script>
 
-(function installRealSunSystem() {
 
-  /* =======================================================
-     REMOVE OLD FAKE SUN ELEMENTS
-  ======================================================= */
+/* =========================================================
+   CONFIG
+========================================================= */
 
-  const oldSun =
-    document.getElementById("sunGlow");
 
-  if (oldSun) {
-    oldSun.remove();
+/*
+Controls how strongly the REAL SUN
+contributes visually.
+
+1.0 = normal
+1.3 = stronger
+0.5 = subtle
+*/
+
+const SUN_VARIANCE_WEIGHT =
+  1.0;
+
+
+/*
+Closest allowed camera distance.
+
+120000 = 120 km
+*/
+
+const MIN_ZOOM_DISTANCE =
+  120000;
+
+
+
+/* =========================================================
+   CREATE CESIUM VIEWER
+========================================================= */
+
+
+const viewer =
+
+  new Cesium.Viewer(
+
+    "cesiumContainer",
+
+    {
+
+      animation: false,
+
+      timeline: false,
+
+      baseLayerPicker: false,
+
+      geocoder: false,
+
+      homeButton: false,
+
+      sceneModePicker: false,
+
+      navigationHelpButton: false,
+
+      fullscreenButton: false,
+
+      infoBox: false,
+
+      selectionIndicator: false,
+
+      shouldAnimate: true,
+
+      baseLayer: false,
+
+      terrainProvider:
+        new Cesium.EllipsoidTerrainProvider()
+
+    }
+
+  );
+
+
+
+/* =========================================================
+   IMAGE QUALITY
+========================================================= */
+
+
+viewer.resolutionScale =
+
+  Math.min(
+
+    window.devicePixelRatio || 1,
+
+    2
+
+  );
+
+
+viewer.scene.globe.maximumScreenSpaceError =
+  1;
+
+
+viewer.scene.globe.tileCacheSize =
+  1000;
+
+
+viewer.scene.globe.preloadAncestors =
+  true;
+
+
+viewer.scene.globe.preloadSiblings =
+  true;
+
+
+viewer.scene.fxaa =
+  true;
+
+
+
+/* =========================================================
+   SPACE / STARS / ATMOSPHERE
+========================================================= */
+
+
+/*
+Cesium's SkyBox gives the small
+background stars when zoomed out.
+*/
+
+viewer.scene.skyBox.show =
+  true;
+
+
+viewer.scene.backgroundColor =
+  Cesium.Color.BLACK;
+
+
+viewer.scene.skyAtmosphere.show =
+  true;
+
+
+viewer.scene.sun.show =
+  true;
+
+
+viewer.scene.moon.show =
+  true;
+
+
+viewer.scene.globe.showGroundAtmosphere =
+  true;
+
+
+
+/* =========================================================
+   REAL PHYSICAL SUN LIGHT
+========================================================= */
+
+
+/*
+This makes the actual Earth react
+to the Sun position.
+
+Day side / night side changes
+according to date and time.
+*/
+
+viewer.scene.globe.enableLighting =
+  true;
+
+
+viewer.scene.globe.dynamicAtmosphereLighting =
+  true;
+
+
+viewer.scene.globe.dynamicAtmosphereLightingFromSun =
+  true;
+
+
+viewer.scene.light =
+  new Cesium.SunLight();
+
+
+
+/* =========================================================
+   REAL CURRENT TIME
+========================================================= */
+
+
+viewer.clock.currentTime =
+
+  Cesium.JulianDate.fromDate(
+
+    new Date()
+
+  );
+
+
+viewer.clock.shouldAnimate =
+  true;
+
+
+viewer.clock.multiplier =
+  1;
+
+
+
+/* =========================================================
+   ZOOM LIMIT
+========================================================= */
+
+
+viewer
+.scene
+.screenSpaceCameraController
+.minimumZoomDistance =
+  MIN_ZOOM_DISTANCE;
+
+
+viewer
+.scene
+.screenSpaceCameraController
+.maximumZoomDistance =
+  55000000;
+
+
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+
+
+let countries =
+  [];
+
+
+let selectedCountry =
+  null;
+
+
+let selectedSafeArea =
+  null;
+
+
+let worldBorderBackSource =
+  null;
+
+
+let worldBorderFrontSource =
+  null;
+
+
+let selectedBorderBackSource =
+  null;
+
+
+let selectedBorderFrontSource =
+  null;
+
+
+let cloudObjects =
+  [];
+
+
+let cloudTimer =
+  null;
+
+
+
+/* =========================================================
+   COMMENTS
+========================================================= */
+
+
+const comments = [
+
+  "Mantıklı",
+
+  "Katılıyorum",
+
+  "Bence iyi",
+
+  "Emin değilim",
+
+  "Olabilir",
+
+  "Neden?",
+
+  "Kararsızım",
+
+  "Destekliyorum",
+
+  "Riskli olabilir",
+
+  "Daha adil olur",
+
+  "İyi düşünülmeli",
+
+  "Bence hayır"
+
+];
+
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+
+function clamp(
+  value,
+  min,
+  max
+) {
+
+  return Math.max(
+
+    min,
+
+    Math.min(
+      max,
+      value
+    )
+
+  );
+
+}
+
+
+
+function smoothstep(
+  min,
+  max,
+  value
+) {
+
+  if(
+    min === max
+  ) {
+
+    return 0;
+
   }
 
-  document
-    .querySelectorAll(".sunRay")
-    .forEach(el => el.remove());
+
+  const x =
+
+    clamp(
+
+      (value - min)
+      /
+      (max - min),
+
+      0,
+
+      1
+
+    );
 
 
-  /* =======================================================
-     CONFIGURATION
+  return x * x * (3 - 2 * x);
 
-     Think of this as a "variance contributor".
+}
 
-     0.0 = Sun has almost no visual contribution
-     1.0 = normal
-     1.5 = stronger / more cinematic
-  ======================================================= */
 
-  const SUN_VARIANCE = {
 
-    enabled: true,
+function normalize(text) {
 
-    weight: 1.0,
+  return String(text || "")
 
-    /* Rays begin appearing when far enough from Earth */
-    raysStartHeight: 1600000,
+  .toLowerCase()
 
-    /* Rays reach full strength around this height */
-    raysFullHeight: 6500000,
+  .replaceAll(
+    "ı",
+    "i"
+  )
 
-    /* Maximum opacity */
-    maxRayOpacity: 0.50,
+  .normalize(
+    "NFD"
+  )
 
-    /* Size of visual sun */
-    sunSize: 115,
+  .replace(
+    /[\u0300-\u036f]/g,
+    ""
+  )
 
-    /* How far out we project astronomical Sun direction */
-    sunProxyDistance: 55000000
+  .replace(
+    /[^a-z0-9]/g,
+    ""
+  );
+
+}
+
+
+
+function showError(error) {
+
+  console.error(error);
+
+
+  const panel =
+
+    document.getElementById(
+      "errorPanel"
+    );
+
+
+  panel.style.display =
+    "block";
+
+
+  panel.textContent =
+
+    "Error: "
+    +
+    (
+      error?.message
+      ||
+      String(error)
+    );
+
+}
+
+
+
+/* =========================================================
+   HD SATELLITE TILES
+========================================================= */
+
+
+async function loadSatelliteImagery() {
+
+
+  const provider =
+
+    await Cesium
+      .ArcGisMapServerImageryProvider
+      .fromUrl(
+
+        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+
+      );
+
+
+  viewer
+    .imageryLayers
+    .addImageryProvider(
+      provider
+    );
+
+}
+
+
+
+/* =========================================================
+   COUNTRY NAME
+========================================================= */
+
+
+function countryName(country) {
+
+
+  return (
+
+    country?.properties?.name
+
+    ||
+
+    country?.properties?.NAME
+
+    ||
+
+    country?.properties?.ADMIN
+
+    ||
+
+    ""
+
+  );
+
+}
+
+
+
+/* =========================================================
+   FIND COUNTRY
+========================================================= */
+
+
+function findCountry(search) {
+
+
+  let q =
+    normalize(
+      search
+    );
+
+
+  if(
+    q === "turkiye"
+  ) {
+
+    q =
+      "turkey";
+
+  }
+
+
+  if(
+    q === "usa"
+    ||
+    q === "us"
+  ) {
+
+    q =
+      "unitedstatesofamerica";
+
+  }
+
+
+  if(
+    q === "uk"
+  ) {
+
+    q =
+      "unitedkingdom";
+
+  }
+
+
+
+  return countries.find(
+
+    country =>
+
+      normalize(
+        countryName(country)
+      )
+
+      === q
+
+  )
+
+
+  ||
+
+
+  countries.find(
+
+    country =>
+
+      normalize(
+        countryName(country)
+      )
+      .includes(q)
+
+  );
+
+}
+
+
+
+/* =========================================================
+   WORLD COUNTRY BORDERS
+
+   BLACK HALO
+   +
+   BRIGHT WHITE LINE
+========================================================= */
+
+
+async function drawWorldBorders() {
+
+
+  const collection = {
+
+    type:
+      "FeatureCollection",
+
+    features:
+      countries
 
   };
 
 
-  /* =======================================================
-     REAL-TIME CLOCK
+  /*
+  Dark halo.
+  */
 
-     Sun position changes naturally with actual time.
-  ======================================================= */
 
-  viewer.clock.currentTime =
-    Cesium.JulianDate.fromDate(
-      new Date()
+  worldBorderBackSource =
+
+    await Cesium
+      .GeoJsonDataSource
+      .load(
+
+        collection,
+
+        {
+
+          stroke:
+
+            Cesium
+            .Color
+            .BLACK
+            .withAlpha(.92),
+
+          fill:
+
+            Cesium
+            .Color
+            .TRANSPARENT,
+
+          strokeWidth:
+            6,
+
+          clampToGround:
+            true
+
+        }
+
+      );
+
+
+  viewer
+    .dataSources
+    .add(
+      worldBorderBackSource
     );
 
-  viewer.clock.shouldAnimate =
-    true;
-
-  viewer.clock.multiplier =
-    1;
-
-
-  /* =======================================================
-     REAL PHYSICAL SUN LIGHTING
-  ======================================================= */
-
-  viewer.scene.sun.show =
-    true;
-
-  viewer.scene.skyBox.show =
-    true;
-
-  viewer.scene.skyAtmosphere.show =
-    true;
 
 
   /*
-     IMPORTANT
-
-     Your previous code had:
-
-     viewer.scene.globe.enableLighting = false;
-
-     We override it here.
+  White visible line.
   */
 
-  viewer.scene.globe.enableLighting =
-    true;
+
+  worldBorderFrontSource =
+
+    await Cesium
+      .GeoJsonDataSource
+      .load(
+
+        collection,
+
+        {
+
+          stroke:
+
+            Cesium
+            .Color
+            .WHITE
+            .withAlpha(.96),
+
+          fill:
+
+            Cesium
+            .Color
+            .TRANSPARENT,
+
+          strokeWidth:
+            2.5,
+
+          clampToGround:
+            true
+
+        }
+
+      );
+
+
+  viewer
+    .dataSources
+    .add(
+      worldBorderFrontSource
+    );
+
+}
+
+
+
+/* =========================================================
+   SELECTED COUNTRY BORDER
+
+   VERY STRONG BLACK HALO
+   +
+   GOLD BORDER
+========================================================= */
+
+
+async function highlightCountry(country) {
+
+
+  if(
+    selectedBorderBackSource
+  ) {
+
+
+    viewer
+      .dataSources
+      .remove(
+
+        selectedBorderBackSource,
+
+        true
+
+      );
+
+
+    selectedBorderBackSource =
+      null;
+
+  }
+
+
+
+  if(
+    selectedBorderFrontSource
+  ) {
+
+
+    viewer
+      .dataSources
+      .remove(
+
+        selectedBorderFrontSource,
+
+        true
+
+      );
+
+
+    selectedBorderFrontSource =
+      null;
+
+  }
+
 
 
   /*
-     Make atmosphere respond to Sun direction.
+  Thick dark separation.
   */
 
-  viewer.scene.globe.dynamicAtmosphereLighting =
-    true;
 
-  viewer.scene.globe.dynamicAtmosphereLightingFromSun =
-    true;
+  selectedBorderBackSource =
+
+    await Cesium
+      .GeoJsonDataSource
+      .load(
+
+        country,
+
+        {
+
+          stroke:
+
+            Cesium
+            .Color
+            .BLACK
+            .withAlpha(.98),
+
+          fill:
+
+            Cesium
+            .Color
+            .fromCssColorString(
+              "#FFD54A"
+            )
+            .withAlpha(.08),
+
+          strokeWidth:
+            11,
+
+          clampToGround:
+            true
+
+        }
+
+      );
 
 
-  viewer.scene.globe.showGroundAtmosphere =
-    true;
+  viewer
+    .dataSources
+    .add(
+      selectedBorderBackSource
+    );
+
 
 
   /*
-     Use Cesium's actual Sun light.
+  Gold line.
   */
 
-  viewer.scene.light =
-    new Cesium.SunLight();
+
+  selectedBorderFrontSource =
+
+    await Cesium
+      .GeoJsonDataSource
+      .load(
+
+        country,
+
+        {
+
+          stroke:
+
+            Cesium
+            .Color
+            .fromCssColorString(
+              "#FFD54A"
+            )
+            .withAlpha(1),
+
+          fill:
+
+            Cesium
+            .Color
+            .TRANSPARENT,
+
+          strokeWidth:
+            5,
+
+          clampToGround:
+            true
+
+        }
+
+      );
 
 
-  /* =======================================================
-     PRELOAD EARTH <-> SPACE TRANSFORMS
+  viewer
+    .dataSources
+    .add(
+      selectedBorderFrontSource
+    );
 
-     Needed to convert astronomical Sun coordinates
-     into coordinates that rotate with Earth.
-  ======================================================= */
+}
 
-  const preloadNow =
-    Cesium.JulianDate.clone(
-      viewer.clock.currentTime
+
+
+/* =========================================================
+   COUNTRY RECTANGLE
+========================================================= */
+
+
+function countryRectangle(country) {
+
+
+  const bbox =
+    turf.bbox(
+      country
     );
 
 
-  const preloadStart =
-    Cesium.JulianDate.addDays(
+  return Cesium
+    .Rectangle
+    .fromDegrees(
 
-      preloadNow,
+      bbox[0],
 
-      -2,
+      bbox[1],
 
-      new Cesium.JulianDate()
+      bbox[2],
 
-    );
-
-
-  const preloadStop =
-    Cesium.JulianDate.addDays(
-
-      preloadNow,
-
-      2,
-
-      new Cesium.JulianDate()
+      bbox[3]
 
     );
 
+}
 
-  Cesium.Transforms.preloadIcrfFixed(
 
-    new Cesium.TimeInterval({
 
-      start:
-        preloadStart,
+/* =========================================================
+   CREATE SAFE CLOUD AREA
 
-      stop:
-        preloadStop
+   Country is contracted slightly so
+   cloud centers don't sit on borders.
+========================================================= */
 
-    })
 
+function createSafeArea(country) {
+
+
+  const areaKm2 =
+
+    turf.area(country)
+    /
+    1000000;
+
+
+  let distances;
+
+
+  if(
+    areaKm2 > 500000
+  ) {
+
+    distances = [
+      -55,
+      -40,
+      -25,
+      -15,
+      -5
+    ];
+
+  }
+
+  else if(
+    areaKm2 > 100000
+  ) {
+
+    distances = [
+      -35,
+      -25,
+      -15,
+      -8,
+      -4
+    ];
+
+  }
+
+  else {
+
+    distances = [
+      -12,
+      -8,
+      -4,
+      -2
+    ];
+
+  }
+
+
+
+  for(
+    const distance
+    of distances
+  ) {
+
+
+    try {
+
+
+      const safe =
+
+        turf.buffer(
+
+          country,
+
+          distance,
+
+          {
+            units:
+              "kilometers"
+          }
+
+        );
+
+
+      if(
+        safe
+      ) {
+
+        return safe;
+
+      }
+
+    }
+
+    catch(error) {
+
+      console.warn(
+        "Safe-area fallback",
+        error
+      );
+
+    }
+
+  }
+
+
+  return country;
+
+}
+
+
+
+/* =========================================================
+   FOCUS COUNTRY
+========================================================= */
+
+
+async function focusCountry(
+
+  country,
+
+  animate = true
+
+) {
+
+
+  if(
+    !country
+  ) {
+
+    return;
+
+  }
+
+
+  selectedCountry =
+    country;
+
+
+  selectedSafeArea =
+    createSafeArea(
+      country
+    );
+
+
+  const name =
+    countryName(
+      country
+    );
+
+
+  document
+    .getElementById(
+      "countryLabel"
+    )
+    .textContent =
+
+      normalize(name)
+      ===
+      "turkey"
+
+      ?
+
+      "Türkiye"
+
+      :
+
+      name;
+
+
+  clearClouds();
+
+
+  await highlightCountry(
+    country
   );
 
 
-  /* =======================================================
-     CREATE CSS
-  ======================================================= */
+  const rectangle =
 
-  const style =
-    document.createElement(
-      "style"
+    countryRectangle(
+      country
     );
 
 
-  style.textContent = `
+  viewer
+    .camera
+    .flyTo({
 
-    /* ===============================================
-       REAL SUN VISUAL LAYER
-    =============================================== */
+      destination:
+        rectangle,
 
-    #realSunLayer {
+      duration:
+        animate
+        ?
+        1.7
+        :
+        0
 
-      position: fixed;
+    });
 
-      inset: 0;
 
-      overflow: hidden;
+  setTimeout(
 
-      pointer-events: none;
+    startCloudFlow,
 
-      z-index: 25;
+    animate
+    ?
+    1500
+    :
+    450
 
-    }
-
-
-    /* ===============================================
-       SUN DISC / GLOW
-    =============================================== */
-
-    #realSunGlow {
-
-      position: absolute;
-
-      width: ${SUN_VARIANCE.sunSize}px;
-      height: ${SUN_VARIANCE.sunSize}px;
-
-      margin-left: -${SUN_VARIANCE.sunSize / 2}px;
-      margin-top: -${SUN_VARIANCE.sunSize / 2}px;
-
-      border-radius: 50%;
-
-      pointer-events: none;
-
-      opacity: 0;
-
-      will-change:
-        left,
-        top,
-        opacity;
-
-
-      background:
-
-        radial-gradient(
-
-          circle,
-
-          rgba(255,255,250,1) 0%,
-
-          rgba(255,245,200,.98) 8%,
-
-          rgba(255,218,128,.92) 17%,
-
-          rgba(255,184,66,.52) 29%,
-
-          rgba(255,155,36,.20) 45%,
-
-          transparent 70%
-
-        );
-
-
-      box-shadow:
-
-        0 0 35px
-        rgba(255,245,200,.95),
-
-        0 0 80px
-        rgba(255,210,110,.70),
-
-        0 0 160px
-        rgba(255,170,55,.35),
-
-        0 0 280px
-        rgba(255,130,30,.15);
-
-
-      filter:
-        blur(.4px);
-
-      mix-blend-mode:
-        screen;
-
-    }
-
-
-
-    /* ===============================================
-       LIGHT RAYS
-    =============================================== */
-
-    .realSunRay {
-
-      position: absolute;
-
-      left: 0;
-      top: 0;
-
-      width: max(130vw, 1500px);
-
-      height: 100px;
-
-      transform-origin:
-        0 50%;
-
-      pointer-events:
-        none;
-
-      opacity:
-        0;
-
-      will-change:
-        transform,
-        left,
-        top,
-        opacity;
-
-
-      background:
-
-        linear-gradient(
-
-          90deg,
-
-          rgba(255,246,205,.38) 0%,
-
-          rgba(255,226,150,.24) 10%,
-
-          rgba(255,199,105,.14) 30%,
-
-          rgba(255,178,80,.06) 52%,
-
-          transparent 76%
-
-        );
-
-
-      filter:
-        blur(24px);
-
-
-      mix-blend-mode:
-        screen;
-
-    }
-
-
-
-    .realSunRay.soft {
-
-      height:
-        180px;
-
-      filter:
-        blur(45px);
-
-    }
-
-
-
-    /* ===============================================
-       VERY SUBTLE LENS BLOOM
-    =============================================== */
-
-    #realSunBloom {
-
-      position:
-        absolute;
-
-      width:
-        420px;
-
-      height:
-        420px;
-
-      margin-left:
-        -210px;
-
-      margin-top:
-        -210px;
-
-      border-radius:
-        50%;
-
-      opacity:
-        0;
-
-      pointer-events:
-        none;
-
-      will-change:
-        left,
-        top,
-        opacity;
-
-
-      background:
-
-        radial-gradient(
-
-          circle,
-
-          rgba(255,230,170,.11),
-
-          rgba(255,190,95,.055) 30%,
-
-          transparent 68%
-
-        );
-
-
-      filter:
-        blur(18px);
-
-
-      mix-blend-mode:
-        screen;
-
-    }
-
-  `;
-
-
-  document.head.appendChild(
-    style
   );
 
+}
 
-  /* =======================================================
-     CREATE HTML ELEMENTS
-  ======================================================= */
 
-  const layer =
+
+/* =========================================================
+   RANDOM LOCATION SAFELY INSIDE COUNTRY
+========================================================= */
+
+
+function randomPointInsideCountry() {
+
+
+  if(
+    !selectedSafeArea
+  ) {
+
+    return null;
+
+  }
+
+
+  const bbox =
+
+    turf.bbox(
+      selectedSafeArea
+    );
+
+
+  for(
+    let attempt = 0;
+    attempt < 2500;
+    attempt++
+  ) {
+
+
+    const lng =
+
+      bbox[0]
+
+      +
+
+      Math.random()
+
+      *
+
+      (
+        bbox[2]
+        -
+        bbox[0]
+      );
+
+
+    const lat =
+
+      bbox[1]
+
+      +
+
+      Math.random()
+
+      *
+
+      (
+        bbox[3]
+        -
+        bbox[1]
+      );
+
+
+    const point =
+
+      turf.point(
+        [
+          lng,
+          lat
+        ]
+      );
+
+
+    try {
+
+
+      if(
+
+        turf.booleanPointInPolygon(
+
+          point,
+
+          selectedSafeArea
+
+        )
+
+      ) {
+
+
+        return {
+
+          lat,
+          lng
+
+        };
+
+      }
+
+    }
+
+    catch(error) {}
+
+  }
+
+
+  return null;
+
+}
+
+
+
+/* =========================================================
+   SPAWN CLOUD
+========================================================= */
+
+
+function spawnCloud() {
+
+
+  if(
+    !selectedCountry
+  ) {
+
+    return;
+
+  }
+
+
+  const location =
+    randomPointInsideCountry();
+
+
+  if(
+    !location
+  ) {
+
+    return;
+
+  }
+
+
+  const element =
+
     document.createElement(
       "div"
     );
 
 
-  layer.id =
-    "realSunLayer";
+  element.className =
+    "cloud";
 
 
-  layer.innerHTML = `
+  element.textContent =
 
-    <div id="realSunBloom"></div>
+    comments[
 
-    <div
-      class="realSunRay"
-      data-offset="-4"
-    ></div>
+      Math.floor(
 
-    <div
-      class="realSunRay soft"
-      data-offset="-1.5"
-    ></div>
+        Math.random()
+        *
+        comments.length
 
-    <div
-      class="realSunRay"
-      data-offset="2"
-    ></div>
+      )
 
-    <div
-      class="realSunRay soft"
-      data-offset="5"
-    ></div>
-
-    <div id="realSunGlow"></div>
-
-  `;
+    ];
 
 
-  document.body.appendChild(
-    layer
+  document
+    .getElementById(
+      "cloudLayer"
+    )
+    .appendChild(
+      element
+    );
+
+
+  const position =
+
+    Cesium.Cartesian3.fromDegrees(
+
+      location.lng,
+
+      location.lat,
+
+      6500
+
+    );
+
+
+  const cloud = {
+
+    id:
+      Date.now()
+      +
+      Math.random(),
+
+    element,
+
+    position
+
+  };
+
+
+  cloudObjects.push(
+    cloud
   );
 
 
-  const sunGlow =
-    document.getElementById(
-      "realSunGlow"
+  /*
+  Maximum 3 active clouds.
+  */
+
+
+  if(
+    cloudObjects.length > 3
+  ) {
+
+
+    const oldest =
+      cloudObjects.shift();
+
+
+    oldest.element.remove();
+
+  }
+
+
+  setTimeout(
+
+    ()=> {
+
+
+      cloudObjects =
+
+        cloudObjects.filter(
+
+          item =>
+            item !== cloud
+
+        );
+
+
+      element.remove();
+
+    },
+
+    8000
+
+  );
+
+}
+
+
+
+/* =========================================================
+   CLOUD FLOW
+========================================================= */
+
+
+function scheduleNextCloud() {
+
+
+  const delay =
+
+    2200
+
+    +
+
+    Math.random()
+    *
+    3000;
+
+
+  cloudTimer =
+
+    setTimeout(
+
+      ()=> {
+
+
+        spawnCloud();
+
+
+        scheduleNextCloud();
+
+      },
+
+      delay
+
+    );
+
+}
+
+
+
+function startCloudFlow() {
+
+
+  clearTimeout(
+    cloudTimer
+  );
+
+
+  spawnCloud();
+
+
+  cloudTimer =
+
+    setTimeout(
+
+      ()=> {
+
+
+        spawnCloud();
+
+
+        scheduleNextCloud();
+
+      },
+
+      2300
+
+    );
+
+}
+
+
+
+function clearClouds() {
+
+
+  clearTimeout(
+    cloudTimer
+  );
+
+
+  cloudObjects.forEach(
+
+    cloud => {
+
+      cloud.element.remove();
+
+    }
+
+  );
+
+
+  cloudObjects =
+    [];
+
+}
+
+
+
+/* =========================================================
+   REAL SUN CALCULATION
+========================================================= */
+
+
+const sunInertial =
+  new Cesium.Cartesian3();
+
+
+const sunFixed =
+  new Cesium.Cartesian3();
+
+
+const sunDirection =
+  new Cesium.Cartesian3();
+
+
+const sunProxy =
+  new Cesium.Cartesian3();
+
+
+const icrfMatrix =
+  new Cesium.Matrix3();
+
+
+/*
+Fallback astronomical calculation.
+
+This means even if Cesium's ICRF data
+hasn't loaded yet, the page doesn't crash.
+*/
+
+function approximateSunDirection(date) {
+
+
+  const jd =
+
+    date.getTime()
+    /
+    86400000
+
+    +
+
+    2440587.5;
+
+
+  const n =
+    jd - 2451545.0;
+
+
+  let L =
+
+    280.460
+
+    +
+
+    0.9856474
+    *
+    n;
+
+
+  let g =
+
+    357.528
+
+    +
+
+    0.9856003
+    *
+    n;
+
+
+  L =
+    ((L % 360) + 360) % 360;
+
+
+  g =
+    ((g % 360) + 360) % 360;
+
+
+  const gRad =
+    Cesium.Math.toRadians(
+      g
     );
 
 
-  const sunBloom =
-    document.getElementById(
-      "realSunBloom"
+  const lambda =
+
+    L
+
+    +
+
+    1.915
+    *
+    Math.sin(
+      gRad
+    )
+
+    +
+
+    0.020
+    *
+    Math.sin(
+      2 * gRad
     );
 
 
-  const sunRays =
+  const lambdaRad =
 
-    Array.from(
+    Cesium.Math.toRadians(
+      lambda
+    );
 
-      document.querySelectorAll(
-        ".realSunRay"
+
+  const epsilonRad =
+
+    Cesium.Math.toRadians(
+
+      23.439
+
+      -
+
+      0.0000004
+      *
+      n
+
+    );
+
+
+  const rightAscension =
+
+    Math.atan2(
+
+      Math.cos(
+        epsilonRad
+      )
+      *
+      Math.sin(
+        lambdaRad
+      ),
+
+      Math.cos(
+        lambdaRad
       )
 
     );
 
 
-  /* =======================================================
-     SCRATCH OBJECTS
+  const declination =
 
-     Reusing these prevents creating garbage
-     every animation frame.
-  ======================================================= */
+    Math.asin(
 
-  const scratchSunInertial =
-    new Cesium.Cartesian3();
+      Math.sin(
+        epsilonRad
+      )
 
+      *
 
-  const scratchSunFixed =
-    new Cesium.Cartesian3();
-
-
-  const scratchSunDirection =
-    new Cesium.Cartesian3();
-
-
-  const scratchSunProxy =
-    new Cesium.Cartesian3();
-
-
-  const scratchCameraDirection =
-    new Cesium.Cartesian3();
-
-
-  const scratchCameraRadial =
-    new Cesium.Cartesian3();
-
-
-  const scratchToSun =
-    new Cesium.Cartesian3();
-
-
-  const scratchMatrix =
-    new Cesium.Matrix3();
-
-
-  const scratchScreen =
-    new Cesium.Cartesian2();
-
-
-
-  /* =======================================================
-     HELPERS
-  ======================================================= */
-
-  function clamp(
-    value,
-    min,
-    max
-  ) {
-
-    return Math.max(
-
-      min,
-
-      Math.min(
-        max,
-        value
+      Math.sin(
+        lambdaRad
       )
 
     );
 
-  }
+
+  let gmst =
+
+    280.46061837
+
+    +
+
+    360.98564736629
+    *
+    (
+      jd
+      -
+      2451545.0
+    );
+
+
+  gmst =
+    ((gmst % 360) + 360) % 360;
+
+
+  let subsolarLongitude =
+
+    Cesium.Math.toDegrees(
+      rightAscension
+    )
+
+    -
+
+    gmst;
+
+
+  subsolarLongitude =
+
+    (
+      (
+        subsolarLongitude
+        +
+        540
+      )
+
+      %
+      360
+
+    )
+
+    -
+    180;
+
+
+  const lon =
+
+    Cesium.Math.toRadians(
+      subsolarLongitude
+    );
+
+
+  /*
+  Earth-fixed direction:
+  X = 0° longitude
+  Y = 90° East
+  Z = North Pole
+  */
+
+
+  sunDirection.x =
+
+    Math.cos(
+      declination
+    )
+
+    *
+
+    Math.cos(
+      lon
+    );
+
+
+  sunDirection.y =
+
+    Math.cos(
+      declination
+    )
+
+    *
+
+    Math.sin(
+      lon
+    );
+
+
+  sunDirection.z =
+
+    Math.sin(
+      declination
+    );
+
+
+  return Cesium.Cartesian3.normalize(
+
+    sunDirection,
+
+    sunDirection
+
+  );
+
+}
 
 
 
-  function smoothstep(
-    min,
-    max,
-    value
-  ) {
+/* =========================================================
+   GET ACTUAL CESIUM SUN POSITION
 
-    const x =
-      clamp(
+   Primary:
+   Cesium astronomical model.
 
-        (value - min)
-        /
-        (max - min),
-
-        0,
-
-        1
-
-      );
+   Fallback:
+   our calculation above.
+========================================================= */
 
 
-    return x * x * (3 - 2 * x);
-
-  }
+function getRealSunDirection() {
 
 
+  const time =
+    viewer.clock.currentTime;
 
-  /* =======================================================
-     GET REAL SUN DIRECTION
 
-     1. Calculate Sun in inertial space
-     2. Transform it into Earth-fixed space
-     3. Normalize it
-
-     This means Earth rotation + date + time
-     all affect the result.
-  ======================================================= */
-
-  function getSunDirectionFixed(
-    time
-  ) {
+  try {
 
 
     Cesium
@@ -623,7 +2456,7 @@
 
         time,
 
-        scratchSunInertial
+        sunInertial
 
       );
 
@@ -636,650 +2469,858 @@
 
           time,
 
-          scratchMatrix
+          icrfMatrix
 
         );
 
 
-    /*
-       Transform data may not be ready
-       during the first frames.
-    */
-
     if(
-      !Cesium.defined(
+      Cesium.defined(
         transform
       )
     ) {
 
-      return null;
 
-    }
+      Cesium
+        .Matrix3
+        .multiplyByVector(
 
+          transform,
 
-    Cesium
-      .Matrix3
-      .multiplyByVector(
+          sunInertial,
 
-        transform,
+          sunFixed
 
-        scratchSunInertial,
+        );
 
-        scratchSunFixed
-
-      );
-
-
-    Cesium
-      .Cartesian3
-      .normalize(
-
-        scratchSunFixed,
-
-        scratchSunDirection
-
-      );
-
-
-    return scratchSunDirection;
-
-  }
-
-
-
-  /* =======================================================
-     UPDATE SUN
-
-     These are the actual variance contributors:
-
-     1. Sun astronomical position
-     2. Earth rotation
-     3. Current time
-     4. Camera rotation
-     5. Camera distance
-     6. Whether Sun is on camera-facing hemisphere
-  ======================================================= */
-
-  function updateRealSun() {
-
-
-    if(
-      !SUN_VARIANCE.enabled
-    ) {
-
-      layer.style.display =
-        "none";
-
-      return;
-
-    }
-
-
-    layer.style.display =
-      "block";
-
-
-    const time =
-      viewer.clock.currentTime;
-
-
-    const sunDirection =
-
-      getSunDirectionFixed(
-        time
-      );
-
-
-    if(
-      !sunDirection
-    ) {
-
-      return;
-
-    }
-
-
-
-    /* =====================================================
-       SUN PROXY POSITION
-
-       The real Sun is ~150 million km away.
-
-       We only need the DIRECTION for screen projection,
-       so we create a closer proxy point in the same
-       astronomical direction.
-    ===================================================== */
-
-    Cesium
-      .Cartesian3
-      .multiplyByScalar(
-
-        sunDirection,
-
-        SUN_VARIANCE.sunProxyDistance,
-
-        scratchSunProxy
-
-      );
-
-
-
-    /* =====================================================
-       CAMERA HEIGHT CONTRIBUTION
-
-       Close to country:
-       no giant cinematic rays.
-
-       Far from Earth:
-       rays become visible.
-    ===================================================== */
-
-    const cameraHeight =
-
-      viewer
-        .camera
-        .positionCartographic
-        .height;
-
-
-    const zoomContribution =
-
-      smoothstep(
-
-        SUN_VARIANCE.raysStartHeight,
-
-        SUN_VARIANCE.raysFullHeight,
-
-        cameraHeight
-
-      );
-
-
-
-    /* =====================================================
-       CAMERA-SIDE / HEMISPHERE CONTRIBUTION
-
-       Determines whether the Sun is on the
-       hemisphere currently facing the viewer.
-    ===================================================== */
-
-    Cesium
-      .Cartesian3
-      .normalize(
-
-        viewer.camera.positionWC,
-
-        scratchCameraRadial
-
-      );
-
-
-    const hemisphereDot =
 
       Cesium
         .Cartesian3
-        .dot(
+        .normalize(
 
-          scratchCameraRadial,
+          sunFixed,
 
           sunDirection
 
         );
 
 
-    /*
-       -1 = opposite side of Earth
-        0 = horizon
-        1 = directly on viewer side
-    */
+      return sunDirection;
 
-    const hemisphereContribution =
+    }
 
-      smoothstep(
+  }
 
-        -0.12,
+  catch(error) {
 
-        0.35,
+    console.warn(
+      "Using fallback Sun calculation.",
+      error
+    );
 
-        hemisphereDot
-
-      );
+  }
 
 
+  return approximateSunDirection(
+    new Date()
+  );
 
-    /* =====================================================
-       CAMERA DIRECTION CONTRIBUTION
+}
 
-       Rays are stronger when the camera is oriented
-       toward the direction of the Sun.
-    ===================================================== */
+
+
+/* =========================================================
+   SUN VISUAL ELEMENTS
+========================================================= */
+
+
+const realSun =
+
+  document.getElementById(
+    "realSun"
+  );
+
+
+const sunBloom =
+
+  document.getElementById(
+    "sunBloom"
+  );
+
+
+const sunRays =
+
+  Array.from(
+
+    document.querySelectorAll(
+      ".realSunRay"
+    )
+
+  );
+
+
+const screenScratch =
+  new Cesium.Cartesian2();
+
+
+const cameraRadial =
+  new Cesium.Cartesian3();
+
+
+const directionToSun =
+  new Cesium.Cartesian3();
+
+
+
+/* =========================================================
+   REAL SUN RAYS
+
+   VARIANCE CONTRIBUTORS:
+
+   actual Sun position
+   ×
+   Earth rotation
+   ×
+   current date/time
+   ×
+   camera side
+   ×
+   camera angle
+   ×
+   zoom distance
+   ×
+   SUN_VARIANCE_WEIGHT
+========================================================= */
+
+
+function updateSunVisuals() {
+
+
+  const direction =
+    getRealSunDirection();
+
+
+  /*
+  Create a point very far away
+  in the real Sun direction.
+  */
+
+
+  Cesium.Cartesian3.multiplyByScalar(
+
+    direction,
+
+    65000000,
+
+    sunProxy
+
+  );
+
+
+  const cameraHeight =
+
+    viewer
+      .camera
+      .positionCartographic
+      .height;
+
+
+  /*
+  Close to countries:
+  rays almost disappear.
+
+  Zoomed out:
+  rays become visible.
+  */
+
+
+  const zoomContribution =
+
+    smoothstep(
+
+      1800000,
+
+      7000000,
+
+      cameraHeight
+
+    );
+
+
+  /*
+  What side of Earth are we viewing?
+  */
+
+
+  Cesium.Cartesian3.normalize(
+
+    viewer.camera.positionWC,
+
+    cameraRadial
+
+  );
+
+
+  const hemisphereDot =
+
+    Cesium.Cartesian3.dot(
+
+      cameraRadial,
+
+      direction
+
+    );
+
+
+  const hemisphereContribution =
+
+    smoothstep(
+
+      -0.30,
+
+      0.20,
+
+      hemisphereDot
+
+    );
+
+
+  /*
+  Check whether Sun direction is
+  reasonably near the camera view.
+  */
+
+
+  Cesium.Cartesian3.subtract(
+
+    sunProxy,
+
+    viewer.camera.positionWC,
+
+    directionToSun
+
+  );
+
+
+  Cesium.Cartesian3.normalize(
+
+    directionToSun,
+
+    directionToSun
+
+  );
+
+
+  const cameraDot =
+
+    Cesium.Cartesian3.dot(
+
+      viewer.camera.directionWC,
+
+      directionToSun
+
+    );
+
+
+  const facingContribution =
+
+    smoothstep(
+
+      -0.80,
+
+      0.15,
+
+      cameraDot
+
+    );
+
+
+  /*
+  FINAL SUN VARIANCE.
+  */
+
+
+  let contribution =
+
+    zoomContribution
+
+    *
+
+    hemisphereContribution
+
+    *
+
+    facingContribution
+
+    *
+
+    SUN_VARIANCE_WEIGHT;
+
+
+  contribution =
+
+    clamp(
+
+      contribution,
+
+      0,
+
+      1
+
+    );
+
+
+  /*
+  Project real Sun position
+  onto the user's screen.
+  */
+
+
+  const screen =
 
     Cesium
-      .Cartesian3
-      .subtract(
+      .SceneTransforms
+      .worldToWindowCoordinates(
 
-        scratchSunProxy,
+        viewer.scene,
 
-        viewer.camera.positionWC,
+        sunProxy,
 
-        scratchToSun
-
-      );
-
-
-    Cesium
-      .Cartesian3
-      .normalize(
-
-        scratchToSun,
-
-        scratchToSun
+        screenScratch
 
       );
 
 
-    Cesium
-      .Cartesian3
-      .normalize(
-
-        viewer.camera.directionWC,
-
-        scratchCameraDirection
-
-      );
+  if(
+    !screen
+    ||
+    contribution < .01
+  ) {
 
 
-    const cameraDot =
+    realSun.style.opacity =
+      "0";
 
-      Cesium
-        .Cartesian3
-        .dot(
 
-          scratchCameraDirection,
+    sunBloom.style.opacity =
+      "0";
 
-          scratchToSun
+
+    sunRays.forEach(
+
+      ray => {
+
+        ray.style.opacity =
+          "0";
+
+      }
+
+    );
+
+
+    return;
+
+  }
+
+
+  const width =
+
+    viewer.scene.canvas.clientWidth;
+
+
+  const height =
+
+    viewer.scene.canvas.clientHeight;
+
+
+  /*
+  Allow Sun to sit slightly outside viewport.
+
+  Rays can then enter from the edge.
+  */
+
+
+  const sunX =
+
+    clamp(
+
+      screen.x,
+
+      -100,
+
+      width + 100
+
+    );
+
+
+  const sunY =
+
+    clamp(
+
+      screen.y,
+
+      -100,
+
+      height + 100
+
+    );
+
+
+  const earthCenterX =
+    width / 2;
+
+
+  const earthCenterY =
+    height / 2;
+
+
+  /*
+  Direction FROM Sun TOWARD Earth.
+  */
+
+
+  const rayAngle =
+
+    Math.atan2(
+
+      earthCenterY - sunY,
+
+      earthCenterX - sunX
+
+    );
+
+
+  const degrees =
+
+    Cesium.Math.toDegrees(
+      rayAngle
+    );
+
+
+  /*
+  SUN GLOW.
+  */
+
+
+  realSun.style.left =
+    sunX + "px";
+
+
+  realSun.style.top =
+    sunY + "px";
+
+
+  realSun.style.opacity =
+
+    clamp(
+
+      contribution * .95,
+
+      0,
+
+      .95
+
+    );
+
+
+  /*
+  BLOOM.
+  */
+
+
+  sunBloom.style.left =
+    sunX + "px";
+
+
+  sunBloom.style.top =
+    sunY + "px";
+
+
+  sunBloom.style.opacity =
+
+    clamp(
+
+      contribution * .65,
+
+      0,
+
+      .65
+
+    );
+
+
+  /*
+  LIGHT RAYS.
+  */
+
+
+  sunRays.forEach(
+
+    (
+      ray,
+      index
+    ) => {
+
+
+      const angleOffset =
+
+        Number(
+
+          ray.dataset.offset
+          ||
+          0
 
         );
 
 
-    const facingContribution =
+      const verticalOffset =
 
-      smoothstep(
+        (
+          index
+          -
+          1.5
+        )
 
-        -0.10,
+        *
+        15;
 
-        0.65,
 
-        cameraDot
+      ray.style.left =
+        sunX + "px";
 
+
+      ray.style.top =
+
+        (
+          sunY
+          +
+          verticalOffset
+        )
+
+        +
+        "px";
+
+
+      ray.style.transform =
+
+        `rotate(${degrees + angleOffset}deg)`;
+
+
+      const strength =
+
+        index % 2 === 0
+        ?
+        .38
+        :
+        .24;
+
+
+      ray.style.opacity =
+
+        contribution
+        *
+        strength;
+
+    }
+
+  );
+
+}
+
+
+
+/* =========================================================
+   UPDATE CLOUD SCREEN POSITIONS
+========================================================= */
+
+
+function updateCloudPositions() {
+
+
+  cloudObjects.forEach(
+
+    cloud => {
+
+
+      const position =
+
+        Cesium
+          .SceneTransforms
+          .worldToWindowCoordinates(
+
+            viewer.scene,
+
+            cloud.position
+
+          );
+
+
+      if(
+        !position
+      ) {
+
+
+        cloud.element.style.display =
+          "none";
+
+
+        return;
+
+      }
+
+
+      cloud.element.style.display =
+        "block";
+
+
+      cloud.element.style.left =
+
+        position.x
+        +
+        "px";
+
+
+      cloud.element.style.top =
+
+        position.y
+        +
+        "px";
+
+    }
+
+  );
+
+}
+
+
+
+/* =========================================================
+   POST RENDER
+
+   Keeps:
+   clouds locked to country
+   +
+   rays locked to real Sun
+========================================================= */
+
+
+viewer
+.scene
+.postRender
+.addEventListener(
+
+  ()=> {
+
+
+    updateCloudPositions();
+
+
+    updateSunVisuals();
+
+  }
+
+);
+
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+
+document
+.getElementById(
+  "search"
+)
+.addEventListener(
+
+  "submit",
+
+  event => {
+
+
+    event.preventDefault();
+
+
+    const value =
+
+      document
+        .getElementById(
+          "countryInput"
+        )
+        .value;
+
+
+    const country =
+
+      findCountry(
+        value
       );
-
-
-
-    /* =====================================================
-       FINAL SUN VARIANCE CONTRIBUTION
-
-       This is the value you can think of as:
-
-       sunlight_visual_variance
-
-       0 = no contribution
-       1 = maximum contribution
-    ===================================================== */
-
-    let sunContribution =
-
-      zoomContribution
-
-      *
-
-      hemisphereContribution
-
-      *
-
-      facingContribution
-
-      *
-
-      SUN_VARIANCE.weight;
-
-
-    sunContribution =
-
-      clamp(
-
-        sunContribution,
-
-        0,
-
-        1.5
-
-      );
-
-
-
-    /* =====================================================
-       PROJECT SUN INTO SCREEN
-    ===================================================== */
-
-    const screenPosition =
-
-      Cesium
-        .SceneTransforms
-        .worldToWindowCoordinates(
-
-          viewer.scene,
-
-          scratchSunProxy,
-
-          scratchScreen
-
-        );
 
 
     if(
-      !screenPosition
+      country
     ) {
 
 
-      sunGlow.style.opacity =
-        "0";
+      focusCountry(
 
+        country,
 
-      sunBloom.style.opacity =
-        "0";
-
-
-      sunRays.forEach(
-
-        ray => {
-
-          ray.style.opacity =
-            "0";
-
-        }
+        true
 
       );
 
 
-      return;
+      document
+        .getElementById(
+          "countryInput"
+        )
+        .blur();
+
+    }
+
+  }
+
+);
+
+
+
+/* =========================================================
+   INITIALIZE
+========================================================= */
+
+
+async function initialize() {
+
+
+  try {
+
+
+    /*
+    1. High-resolution satellite Earth.
+    */
+
+
+    await loadSatelliteImagery();
+
+
+
+    /*
+    2. Country GeoJSON.
+    */
+
+
+    const response =
+
+      await fetch(
+
+        "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
+
+      );
+
+
+    if(
+      !response.ok
+    ) {
+
+      throw new Error(
+        "Country data could not load."
+      );
+
+    }
+
+
+    const data =
+      await response.json();
+
+
+    countries =
+      data.features;
+
+
+
+    /*
+    3. Very clear borders.
+    */
+
+
+    await drawWorldBorders();
+
+
+
+    /*
+    4. Default country = Türkiye.
+    */
+
+
+    const turkey =
+
+      countries.find(
+
+        country =>
+
+          normalize(
+            countryName(country)
+          )
+
+          ===
+          "turkey"
+
+      );
+
+
+    if(
+      !turkey
+    ) {
+
+      throw new Error(
+        "Türkiye was not found in country data."
+      );
 
     }
 
 
 
-    const width =
-      viewer.scene.canvas.clientWidth;
-
-
-    const height =
-      viewer.scene.canvas.clientHeight;
-
-
-
     /*
-       Sun may mathematically be outside the screen.
-
-       Clamp it slightly outside the viewport so rays
-       can still enter naturally from the edge.
+    5. Focus Türkiye.
     */
 
-    const sunX =
 
-      clamp(
+    await focusCountry(
 
-        screenPosition.x,
+      turkey,
 
-        -120,
-
-        width + 120
-
-      );
-
-
-    const sunY =
-
-      clamp(
-
-        screenPosition.y,
-
-        -120,
-
-        height + 120
-
-      );
-
-
-
-    /* =====================================================
-       SCREEN CENTER
-
-       Rays point FROM the astronomical Sun
-       TOWARD the globe / screen.
-    ===================================================== */
-
-    const centerX =
-      width / 2;
-
-
-    const centerY =
-      height / 2;
-
-
-    const angle =
-
-      Math.atan2(
-
-        centerY - sunY,
-
-        centerX - sunX
-
-      );
-
-
-    const angleDegrees =
-
-      angle
-
-      *
-
-      180
-
-      /
-
-      Math.PI;
-
-
-
-    /* =====================================================
-       SUN GLOW
-    ===================================================== */
-
-    sunGlow.style.left =
-      sunX + "px";
-
-
-    sunGlow.style.top =
-      sunY + "px";
-
-
-    sunGlow.style.opacity =
-
-      clamp(
-
-        sunContribution * 0.95,
-
-        0,
-
-        1
-
-      );
-
-
-
-    /* =====================================================
-       BLOOM
-    ===================================================== */
-
-    sunBloom.style.left =
-      sunX + "px";
-
-
-    sunBloom.style.top =
-      sunY + "px";
-
-
-    sunBloom.style.opacity =
-
-      clamp(
-
-        sunContribution * 0.72,
-
-        0,
-
-        0.72
-
-      );
-
-
-
-    /* =====================================================
-       RAYS
-
-       Their angle now changes continuously based on
-       the REAL Sun position.
-    ===================================================== */
-
-    sunRays.forEach(
-
-      (
-        ray,
-        index
-      ) => {
-
-
-        const offset =
-
-          Number(
-            ray.dataset.offset || 0
-          );
-
-
-        /*
-           Slightly different vertical starts
-           make the rays look organic.
-        */
-
-        const verticalOffset =
-
-          (
-            index
-            -
-            (sunRays.length - 1) / 2
-          )
-
-          *
-
-          15;
-
-
-        ray.style.left =
-          sunX + "px";
-
-
-        ray.style.top =
-
-          (
-            sunY
-            +
-            verticalOffset
-          )
-
-          +
-          "px";
-
-
-        ray.style.transform =
-
-          `rotate(${angleDegrees + offset}deg)`;
-
-
-        const individualStrength =
-
-          index % 2 === 0
-
-          ?
-
-          1
-
-          :
-
-          0.62;
-
-
-        ray.style.opacity =
-
-          clamp(
-
-            sunContribution
-
-            *
-
-            SUN_VARIANCE.maxRayOpacity
-
-            *
-
-            individualStrength,
-
-            0,
-
-            SUN_VARIANCE.maxRayOpacity
-
-          );
-
-      }
+      false
 
     );
 
   }
 
 
+  catch(error) {
 
-  /* =======================================================
-     UPDATE EVERY FRAME
-  ======================================================= */
 
-  viewer
-    .scene
-    .postRender
-    .addEventListener(
-
-      updateRealSun
-
+    showError(
+      error
     );
 
+  }
 
-
-  /* =======================================================
-     INITIAL UPDATE
-  ======================================================= */
-
-  updateRealSun();
+}
 
 
 
-  /* =======================================================
-     OPTIONAL DEBUG
+/* =========================================================
+   START
+========================================================= */
 
-     You can inspect the real Cesium time with:
 
-     console.log(
-       Cesium.JulianDate.toDate(
-         viewer.clock.currentTime
-       )
-     );
-  ======================================================= */
+initialize();
 
-})();
 
 </script>
+
+</body>
+
+</html>
