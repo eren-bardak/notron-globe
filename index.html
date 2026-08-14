@@ -173,10 +173,10 @@ html,body{
 
   position:relative;
 
-  min-width:68px;
-  max-width:95px;
+  min-width:92px;
+  max-width:125px;
 
-  padding:8px 11px;
+  padding:11px 14px;
 
   border-radius:999px;
 
@@ -184,30 +184,60 @@ html,body{
 
   color:#17263a;
 
-  font-size:9px;
+  font-size:10px;
 
   font-weight:700;
 
 
   background:
-    radial-gradient(circle at 28% 35%, rgba(255,255,255,.95) 0 28%, transparent 30%),
-    radial-gradient(circle at 52% 22%, rgba(255,255,255,.98) 0 35%, transparent 37%),
-    radial-gradient(circle at 76% 38%, rgba(245,250,255,.92) 0 28%, transparent 30%),
+
+    radial-gradient(
+      circle at 25% 25%,
+      white 0 25%,
+      transparent 27%
+    ),
+
+    radial-gradient(
+      circle at 52% 15%,
+      white 0 32%,
+      transparent 34%
+    ),
+
+    radial-gradient(
+      circle at 78% 30%,
+      #f9fcff 0 26%,
+      transparent 28%
+    ),
+
     linear-gradient(
       180deg,
-      rgba(255,255,255,.94),
-      rgba(220,238,255,.88)
+      #ffffff 0%,
+      #edf7ff 72%,
+      #dceeff 100%
     );
-  
+
+
   box-shadow:
-    0 8px 20px rgba(0,0,0,.18),
-    0 0 18px rgba(175,220,255,.25);
-  
-  backdrop-filter: blur(2px);
-  
+
+    0 8px 22px rgba(0,0,0,.25),
+
+    0 0 18px rgba(130,210,255,.28),
+
+    inset 0 -6px 12px rgba(80,150,210,.12);
+
+
   animation:
-    appearDisappear 9s ease-in-out infinite,
-    drift 6s ease-in-out infinite alternate;
+
+    appearDisappear
+    9s
+    cubic-bezier(.22,.7,.25,1)
+    infinite,
+
+    drift
+    5s
+    ease-in-out
+    infinite
+    alternate;
 
 
   animation-delay:
@@ -269,8 +299,8 @@ html,body{
     opacity:0;
 
     transform:
-      translateY(10px)
-      scale(.15);
+      translateY(16px)
+      scale(.65);
 
     filter:blur(4px);
   }
@@ -331,24 +361,18 @@ html,body{
 
 
 
-@keyframes drift {
+@keyframes drift{
 
-  0% {
-    margin-left:-5px;
-    margin-top:2px;
+  from{
+    margin-left:-7px;
   }
 
-  50% {
-    margin-left:4px;
-    margin-top:-5px;
-  }
-
-  100% {
+  to{
     margin-left:8px;
-    margin-top:2px;
   }
 
 }
+
 
 
 /* =========================
@@ -536,7 +560,7 @@ const TURKEY_COMMUNE = {
 
     lng:35,
 
-    altitude:0.16
+    altitude:0.28
 
   },
 
@@ -550,14 +574,44 @@ const TURKEY_COMMUNE = {
 
 
   cloudLocations:[
-  
-    { lat:39.8, lng:30.5 },
-    { lat:39.4, lng:33.2 },
-    { lat:38.5, lng:29.0 },
-    { lat:37.9, lng:32.5 },
-    { lat:38.7, lng:35.5 },
-    { lat:38.0, lng:37.0 }
-  
+
+
+    {
+      lat:41.00,
+      lng:29.00
+    },
+
+
+    {
+      lat:39.90,
+      lng:32.85
+    },
+
+
+    {
+      lat:38.42,
+      lng:27.14
+    },
+
+
+    {
+      lat:37.87,
+      lng:32.48
+    },
+
+
+    {
+      lat:38.73,
+      lng:35.48
+    },
+
+
+    {
+      lat:37.07,
+      lng:37.38
+    }
+
+
   ],
 
 
@@ -767,128 +821,35 @@ world
 ============================================= */
 
 
-let cloudTimer = null;
-let activeClouds = [];
-
-function spawnCloud(){
-
-  if(
-    !selectedCountry ||
-    !isTurkey(selectedCountry)
-  ) return;
-
-  const spot =
-    randomPointInside(selectedCountry);
-
-  const cloud = {
-
-    id:
-      Date.now() + Math.random(),
-
-    lat:
-      spot.lat,
-
-    lng:
-      spot.lng,
-
-    delay:
-      0,
-
-    text:
-      TURKEY_COMMUNE.comments[
-        Math.floor(
-          Math.random() *
-          TURKEY_COMMUNE.comments.length
-        )
-      ]
-
-  };
-
-
-  activeClouds.push(cloud);
-
-  // maximum 3 visible
-  if(activeClouds.length > 3){
-    activeClouds.shift();
-  }
-
-  world.htmlElementsData(
-    [...activeClouds]
-  );
-
-
-  // cloud disappears later
-  setTimeout(() => {
-
-    activeClouds =
-      activeClouds.filter(
-        c => c.id !== cloud.id
-      );
-
-    world.htmlElementsData(
-      [...activeClouds]
-    );
-
-  }, 7500);
-
-
-  // next cloud appears at random time
-  cloudTimer =
-    setTimeout(
-      spawnCloud,
-      2200 + Math.random() * 3000
-    );
-}
-  
-function randomPointInside(country){
-
-  const bounds = d3.geoBounds(country);
-
-  while(true){
-
-    const lng =
-      bounds[0][0] +
-      Math.random() *
-      (bounds[1][0] - bounds[0][0]);
-
-    const lat =
-      bounds[0][1] +
-      Math.random() *
-      (bounds[1][1] - bounds[0][1]);
-
-    if(d3.geoContains(country,[lng,lat])){
-      return {lat,lng};
-    }
-  }
-}
-
 function showTurkeyClouds(){
 
-  if(!selectedCountry) return;
 
-  const clouds = [];
+  const cloudData =
 
-  for(let i=0;i<3;i++){
+    TURKEY_COMMUNE
+    .cloudLocations
 
-    const spot =
-      randomPointInside(selectedCountry);
+    .map(
 
-    clouds.push({
+      (spot,index)=>({
 
-      lat: spot.lat,
-      lng: spot.lng,
+        lat:
+          spot.lat,
 
-      delay: -(i * 2.6),
+        lng:
+          spot.lng,
 
-      text:
-        TURKEY_COMMUNE.comments[
-          Math.floor(
-            Math.random() *
-            TURKEY_COMMUNE.comments.length
-          )
-        ]
-    });
-  }
+        delay:
+          -(index * 1.35),
+
+        text:
+
+          TURKEY_COMMUNE
+          .comments[index]
+
+      })
+
+    );
 
 
   world.htmlElementsData(
@@ -897,16 +858,7 @@ function showTurkeyClouds(){
 
 }
 
-  setInterval(() => {
-  
-    if(
-      selectedCountry &&
-      isTurkey(selectedCountry)
-    ){
-      showTurkeyClouds();
-    }
-  
-  }, 9500);
+
 
 /* =============================================
    COUNTRY POLYGONS
