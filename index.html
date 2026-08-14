@@ -1540,7 +1540,6 @@ function clearEntityList(
 
 function drawWorldBorders() {
 
-
   clearEntityList(
     worldBorderEntities
   );
@@ -1568,7 +1567,7 @@ function drawWorldBorders() {
 
 
           /*
-          DARK HALO
+          SOFT WHITE HALO
           */
 
 
@@ -1584,15 +1583,15 @@ function drawWorldBorders() {
                     positions,
 
                   width:
-                    8,
+                    2.2,
 
                   material:
 
                     Cesium
                       .Color
-                      .BLACK
+                      .WHITE
                       .withAlpha(
-                        .92
+                        .28
                       ),
 
                   clampToGround:
@@ -1609,7 +1608,7 @@ function drawWorldBorders() {
 
 
           /*
-          WHITE BORDER
+          MAIN WHITE BORDER
           */
 
 
@@ -1625,7 +1624,7 @@ function drawWorldBorders() {
                     positions,
 
                   width:
-                    3.2,
+                    1.2,
 
                   material:
 
@@ -1633,7 +1632,7 @@ function drawWorldBorders() {
                       .Color
                       .WHITE
                       .withAlpha(
-                        .98
+                        .92
                       ),
 
                   clampToGround:
