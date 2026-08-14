@@ -767,20 +767,45 @@ world
 ============================================= */
 
 
+function randomPointInside(country){
+
+  const bounds = d3.geoBounds(country);
+
+  while(true){
+
+    const lng =
+      bounds[0][0] +
+      Math.random() *
+      (bounds[1][0] - bounds[0][0]);
+
+    const lat =
+      bounds[0][1] +
+      Math.random() *
+      (bounds[1][1] - bounds[0][1]);
+
+    if(d3.geoContains(country,[lng,lat])){
+      return {lat,lng};
+    }
+  }
+}
+
 function showTurkeyClouds(){
 
-  const spots =
-    [...TURKEY_COMMUNE.cloudLocations]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 3);
+  if(!selectedCountry) return;
 
-  const cloudData =
-    spots.map((spot,index)=>({
+  const clouds = [];
+
+  for(let i=0;i<3;i++){
+
+    const spot =
+      randomPointInside(selectedCountry);
+
+    clouds.push({
 
       lat: spot.lat,
       lng: spot.lng,
 
-      delay: -(index * 2.8),
+      delay: -(i * 2.6),
 
       text:
         TURKEY_COMMUNE.comments[
@@ -789,8 +814,8 @@ function showTurkeyClouds(){
             TURKEY_COMMUNE.comments.length
           )
         ]
-
-    }));
+    });
+  }
 
 
   world.htmlElementsData(
@@ -799,7 +824,16 @@ function showTurkeyClouds(){
 
 }
 
-
+  setInterval(() => {
+  
+    if(
+      selectedCountry &&
+      isTurkey(selectedCountry)
+    ){
+      showTurkeyClouds();
+    }
+  
+  }, 9500);
 
 /* =============================================
    COUNTRY POLYGONS
