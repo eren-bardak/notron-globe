@@ -190,54 +190,24 @@ html,body{
 
 
   background:
-
-    radial-gradient(
-      circle at 25% 25%,
-      white 0 25%,
-      transparent 27%
-    ),
-
-    radial-gradient(
-      circle at 52% 15%,
-      white 0 32%,
-      transparent 34%
-    ),
-
-    radial-gradient(
-      circle at 78% 30%,
-      #f9fcff 0 26%,
-      transparent 28%
-    ),
-
+    radial-gradient(circle at 28% 35%, rgba(255,255,255,.95) 0 28%, transparent 30%),
+    radial-gradient(circle at 52% 22%, rgba(255,255,255,.98) 0 35%, transparent 37%),
+    radial-gradient(circle at 76% 38%, rgba(245,250,255,.92) 0 28%, transparent 30%),
     linear-gradient(
       180deg,
-      #ffffff 0%,
-      #edf7ff 72%,
-      #dceeff 100%
+      rgba(255,255,255,.94),
+      rgba(220,238,255,.88)
     );
-
-
+  
   box-shadow:
-
-    0 8px 22px rgba(0,0,0,.25),
-
-    0 0 18px rgba(130,210,255,.28),
-
-    inset 0 -6px 12px rgba(80,150,210,.12);
-
-
+    0 8px 20px rgba(0,0,0,.18),
+    0 0 18px rgba(175,220,255,.25);
+  
+  backdrop-filter: blur(2px);
+  
   animation:
-
-    appearDisappear
-    9s
-    cubic-bezier(.22,.7,.25,1)
-    infinite,
-
-    drift
-    5s
-    ease-in-out
-    infinite
-    alternate;
+    appearDisappear 9s ease-in-out infinite,
+    drift 6s ease-in-out infinite alternate;
 
 
   animation-delay:
