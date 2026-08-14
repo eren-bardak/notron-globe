@@ -793,33 +793,28 @@ world
 
 function showTurkeyClouds(){
 
+  const spots =
+    [...TURKEY_COMMUNE.cloudLocations]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
 
   const cloudData =
+    spots.map((spot,index)=>({
 
-    TURKEY_COMMUNE
-    .cloudLocations
+      lat: spot.lat,
+      lng: spot.lng,
 
-    .map(
+      delay: -(index * 2.8),
 
-      (spot,index)=>({
+      text:
+        TURKEY_COMMUNE.comments[
+          Math.floor(
+            Math.random() *
+            TURKEY_COMMUNE.comments.length
+          )
+        ]
 
-        lat:
-          spot.lat,
-
-        lng:
-          spot.lng,
-
-        delay:
-          -(index * 1.35),
-
-        text:
-
-          TURKEY_COMMUNE
-          .comments[index]
-
-      })
-
-    );
+    }));
 
 
   world.htmlElementsData(
