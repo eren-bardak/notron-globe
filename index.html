@@ -1,464 +1,697 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
-  />
+<meta charset="UTF-8">
 
-  <title>Notron Commune</title>
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+>
 
-  <!-- CESIUM -->
-  <script src="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Cesium.js"></script>
+<title>Notron Commune</title>
 
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Widgets/widgets.css"
-  />
 
-  <!-- TURF: geographic calculations -->
-  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
+<!-- CESIUM -->
+<script
+  src="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Cesium.js">
+</script>
 
-  <style>
-    html,
-    body,
-    #cesiumContainer {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: black;
-      font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
-    }
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Widgets/widgets.css"
+>
 
-    /* remove Cesium credits/buttons visually */
-    .cesium-viewer-bottom,
-    .cesium-viewer-toolbar {
-      display: none !important;
-    }
 
-    /* ==========================
-       SEARCH
-    ========================== */
+<!-- TURF -->
+<script
+  src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js">
+</script>
 
-    #ui {
-      position: fixed;
 
-      top: 24px;
-      left: 50%;
+<style>
 
-      transform: translateX(-50%);
+*{
+  box-sizing:border-box;
+}
 
-      width: min(90vw, 440px);
 
-      z-index: 1000;
-    }
+html,
+body,
+#cesiumContainer{
 
-    #search {
-      display: flex;
+  width:100%;
+  height:100%;
 
-      gap: 8px;
+  margin:0;
+  padding:0;
 
-      padding: 8px;
+  overflow:hidden;
 
-      border-radius: 20px;
+  background:#000;
 
-      background: rgba(5, 11, 22, 0.75);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 
-      backdrop-filter: blur(18px);
+}
 
-      border: 1px solid rgba(255,255,255,.13);
 
-      box-shadow:
-        0 15px 40px rgba(0,0,0,.35);
-    }
+/* Hide unnecessary Cesium buttons */
 
-    #countryInput {
-      flex: 1;
+.cesium-viewer-toolbar{
+  display:none!important;
+}
 
-      border: none;
-      outline: none;
 
-      padding: 13px 15px;
+/* =========================================
+   SEARCH UI
+========================================= */
 
-      border-radius: 14px;
 
-      background: rgba(255,255,255,.08);
+#ui{
 
-      color: white;
+  position:fixed;
 
-      font-size: 15px;
-    }
+  top:24px;
+  left:50%;
 
-    #countryInput::placeholder {
-      color: rgba(255,255,255,.5);
-    }
+  transform:translateX(-50%);
 
-    #focusButton {
-      border: none;
+  width:min(90vw,440px);
 
-      border-radius: 14px;
+  z-index:1000;
 
-      padding: 0 18px;
+}
 
-      background: white;
 
-      color: #09111d;
+#search{
 
-      font-weight: 700;
+  display:flex;
 
-      cursor: pointer;
-    }
+  gap:8px;
 
-    #status {
-      width: max-content;
+  padding:8px;
 
-      max-width: 90%;
+  border-radius:20px;
 
-      margin: 9px auto;
+  background:
+    rgba(5,11,22,.76);
 
-      padding: 7px 13px;
+  border:
+    1px solid rgba(255,255,255,.13);
 
-      border-radius: 999px;
+  backdrop-filter:
+    blur(18px);
 
-      background: rgba(5,11,22,.65);
+  -webkit-backdrop-filter:
+    blur(18px);
 
-      backdrop-filter: blur(12px);
+  box-shadow:
+    0 15px 40px rgba(0,0,0,.35);
 
-      border: 1px solid rgba(255,255,255,.10);
+}
 
-      color: rgba(255,255,255,.65);
 
-      font-size: 11px;
-    }
+#countryInput{
 
-    #status strong {
-      color: white;
-    }
+  flex:1;
 
-    /* ==========================
-       CLOUD COMMENTS
-    ========================== */
+  min-width:0;
 
-    #cloudLayer {
-      position: fixed;
+  border:none;
 
-      inset: 0;
+  outline:none;
 
-      pointer-events: none;
+  padding:
+    13px 15px;
 
-      z-index: 500;
-    }
+  border-radius:14px;
 
-    .cloud {
-      position: absolute;
+  background:
+    rgba(255,255,255,.08);
 
-      transform:
-        translate(-50%, -50%)
-        scale(.15);
+  color:white;
 
-      min-width: 72px;
-      max-width: 110px;
+  font-size:15px;
 
-      padding: 9px 13px;
+}
 
-      color: #152437;
 
-      font-size: 10px;
-      font-weight: 700;
+#countryInput::placeholder{
 
-      text-align: center;
+  color:
+    rgba(255,255,255,.5);
 
-      opacity: 0;
+}
 
-      border-radius: 999px;
 
-      background:
-        linear-gradient(
-          180deg,
-          rgba(255,255,255,.98),
-          rgba(224,241,255,.94)
-        );
+#focusButton{
 
-      box-shadow:
-        0 8px 22px rgba(0,0,0,.22),
-        0 0 18px rgba(170,220,255,.30);
+  border:none;
 
-      animation:
-        cloudLife 8s ease-in-out forwards,
-        cloudFloat 4s ease-in-out infinite alternate;
-    }
+  border-radius:14px;
 
-    .cloud::before {
-      content: "";
+  padding:
+    0 18px;
 
-      position: absolute;
+  background:white;
 
-      width: 32px;
-      height: 32px;
+  color:#09111d;
 
-      top: -13px;
-      left: 17px;
+  font-weight:700;
 
-      border-radius: 50%;
+  cursor:pointer;
 
-      background: white;
+}
 
-      z-index: -1;
-    }
 
-    .cloud::after {
-      content: "";
+/* =========================================
+   COUNTRY STATUS
+========================================= */
 
-      position: absolute;
 
-      width: 38px;
-      height: 38px;
+#status{
 
-      top: -16px;
-      right: 15px;
+  width:max-content;
 
-      border-radius: 50%;
+  max-width:90%;
 
-      background: #f8fcff;
+  margin:
+    9px auto 0;
 
-      z-index: -1;
-    }
+  padding:
+    7px 13px;
 
-    @keyframes cloudLife {
+  border-radius:999px;
 
-      0% {
-        opacity: 0;
+  background:
+    rgba(5,11,22,.65);
 
-        transform:
-          translate(-50%, -50%)
-          translateY(10px)
-          scale(.15);
-      }
+  border:
+    1px solid rgba(255,255,255,.10);
 
-      15% {
-        opacity: 1;
+  backdrop-filter:
+    blur(12px);
 
-        transform:
-          translate(-50%, -50%)
-          translateY(0)
-          scale(1);
-      }
+  -webkit-backdrop-filter:
+    blur(12px);
 
-      70% {
-        opacity: 1;
+  color:
+    rgba(255,255,255,.65);
 
-        transform:
-          translate(-50%, -50%)
-          translateY(-5px)
-          scale(1);
-      }
+  font-size:11px;
 
-      100% {
-        opacity: 0;
+}
 
-        transform:
-          translate(-50%, -50%)
-          translateY(-18px)
-          scale(.85);
-      }
-    }
 
-    @keyframes cloudFloat {
+#status strong{
 
-      from {
-        margin-left: -5px;
-      }
+  color:white;
 
-      to {
-        margin-left: 7px;
-      }
-    }
-  </style>
+}
+
+
+/* =========================================
+   CLOUD LAYER
+========================================= */
+
+
+#cloudLayer{
+
+  position:fixed;
+
+  inset:0;
+
+  z-index:500;
+
+  pointer-events:none;
+
+  overflow:hidden;
+
+}
+
+
+/* =========================================
+   CLOUD
+========================================= */
+
+
+.cloud{
+
+  position:absolute;
+
+  min-width:72px;
+
+  max-width:115px;
+
+  padding:
+    9px 13px;
+
+  color:#152437;
+
+  font-size:10px;
+
+  font-weight:700;
+
+  text-align:center;
+
+  border-radius:999px;
+
+  opacity:0;
+
+
+  background:
+
+    radial-gradient(
+      circle at 25% 28%,
+      rgba(255,255,255,1) 0 28%,
+      transparent 30%
+    ),
+
+    radial-gradient(
+      circle at 52% 18%,
+      rgba(255,255,255,1) 0 35%,
+      transparent 37%
+    ),
+
+    radial-gradient(
+      circle at 78% 32%,
+      rgba(248,252,255,.98) 0 28%,
+      transparent 30%
+    ),
+
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,.98),
+      rgba(222,240,255,.95)
+    );
+
+
+  box-shadow:
+
+    0 9px 22px
+    rgba(0,0,0,.20),
+
+    0 0 20px
+    rgba(170,220,255,.30);
+
+
+  transform:
+    translate(-50%,-50%)
+    scale(.15);
+
+
+  animation:
+
+    cloudLife
+    8s
+    ease-in-out
+    forwards,
+
+    cloudFloat
+    4.5s
+    ease-in-out
+    infinite
+    alternate;
+
+}
+
+
+/* extra fluffy cloud pieces */
+
+
+.cloud::before{
+
+  content:"";
+
+  position:absolute;
+
+  width:32px;
+  height:32px;
+
+  left:16px;
+  top:-13px;
+
+  border-radius:50%;
+
+  background:white;
+
+  z-index:-1;
+
+}
+
+
+.cloud::after{
+
+  content:"";
+
+  position:absolute;
+
+  width:39px;
+  height:39px;
+
+  right:14px;
+  top:-16px;
+
+  border-radius:50%;
+
+  background:#f8fcff;
+
+  z-index:-1;
+
+}
+
+
+/* =========================================
+   CLOUD POP / DISAPPEAR
+========================================= */
+
+
+@keyframes cloudLife{
+
+
+  0%{
+
+    opacity:0;
+
+    transform:
+      translate(-50%,-50%)
+      translateY(12px)
+      scale(.15);
+
+    filter:
+      blur(3px);
+
+  }
+
+
+  15%{
+
+    opacity:1;
+
+    transform:
+      translate(-50%,-50%)
+      translateY(0)
+      scale(1);
+
+    filter:
+      blur(0);
+
+  }
+
+
+  65%{
+
+    opacity:1;
+
+    transform:
+      translate(-50%,-50%)
+      translateY(-4px)
+      scale(1);
+
+  }
+
+
+  82%{
+
+    opacity:.75;
+
+  }
+
+
+  100%{
+
+    opacity:0;
+
+    transform:
+      translate(-50%,-50%)
+      translateY(-18px)
+      scale(.82);
+
+    filter:
+      blur(2px);
+
+  }
+
+}
+
+
+
+/* subtle movement */
+
+
+@keyframes cloudFloat{
+
+
+  from{
+
+    margin-left:-5px;
+
+    margin-top:2px;
+
+  }
+
+
+  to{
+
+    margin-left:7px;
+
+    margin-top:-5px;
+
+  }
+
+}
+
+
+
+</style>
+
 </head>
 
 
+
 <body>
+
 
 <div id="cesiumContainer"></div>
 
 
 <div id="ui">
 
-  <form id="search">
-
-    <input
-      id="countryInput"
-      placeholder="Search country..."
-      autocomplete="off"
-    />
-
-    <button
-      id="focusButton"
-      type="submit"
-    >
-      Focus
-    </button>
-
-  </form>
+<form id="search">
 
 
-  <div id="status">
+<input
+  id="countryInput"
+  placeholder="Search country..."
+  autocomplete="off"
+>
 
-    <strong id="countryLabel">
-      Türkiye
-    </strong>
 
-    · Commune · Anonymous reactions
+<button
+  id="focusButton"
+  type="submit">
 
-  </div>
+Focus
+
+</button>
+
+
+</form>
+
+
+
+<div id="status">
+
+<strong id="countryLabel">
+Türkiye
+</strong>
+
+· Commune · Anonymous reactions
 
 </div>
+
+
+</div>
+
 
 
 <div id="cloudLayer"></div>
 
 
+
 <script>
 
-/* =========================================================
-   CESIUM EARTH
-========================================================= */
+
+/* ==========================================================
+   CREATE CESIUM VIEWER
+========================================================== */
 
 
 const viewer =
   new Cesium.Viewer(
+
     "cesiumContainer",
+
     {
 
-      animation: false,
+      animation:false,
 
-      timeline: false,
+      timeline:false,
 
-      baseLayerPicker: false,
+      baseLayerPicker:false,
 
-      geocoder: false,
+      geocoder:false,
 
-      homeButton: false,
+      homeButton:false,
 
-      sceneModePicker: false,
+      sceneModePicker:false,
 
-      navigationHelpButton: false,
+      navigationHelpButton:false,
 
-      fullscreenButton: false,
+      fullscreenButton:false,
 
-      infoBox: false,
+      infoBox:false,
 
-      selectionIndicator: false,
+      selectionIndicator:false,
 
-      shouldAnimate: true,
+      shouldAnimate:true,
+
+      baseLayer:false,
 
       terrainProvider:
-        new Cesium.EllipsoidTerrainProvider(),
-
-      baseLayer: false
+        new Cesium.EllipsoidTerrainProvider()
 
     }
+
   );
 
 
-/* =========================================================
-   HIGH RESOLUTION SATELLITE TILES
 
-   This replaces the 8K texture.
-
-   As you zoom:
-   more detailed image tiles automatically load.
-========================================================= */
-
-
-const satellite =
-  new Cesium.UrlTemplateImageryProvider({
-
-    url:
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-
-    maximumLevel:
-      19,
-
-    credit:
-      "Esri World Imagery"
-
-  });
-
-
-viewer.imageryLayers.addImageryProvider(
-  satellite
-);
-
-
-/* =========================================================
-   IMAGE QUALITY
-========================================================= */
+/* ==========================================================
+   HIGH QUALITY RENDERING
+========================================================== */
 
 
 viewer.resolutionScale =
+
   Math.min(
-    window.devicePixelRatio,
+
+    window.devicePixelRatio || 1,
+
     2
+
   );
 
+
+
+/*
+Lower number =
+more detailed tiles requested.
+*/
 
 viewer.scene.globe.maximumScreenSpaceError =
   1;
 
 
+
+/*
+Keep more tiles in memory
+while zooming.
+*/
+
 viewer.scene.globe.tileCacheSize =
   1000;
 
+
+
+viewer.scene.globe.preloadAncestors =
+  true;
+
+
+viewer.scene.globe.preloadSiblings =
+  true;
+
+
+
+/*
+Anti aliasing
+*/
 
 viewer.scene.fxaa =
   true;
 
 
-/* atmosphere */
+
+/*
+Atmosphere
+*/
 
 viewer.scene.skyAtmosphere.show =
   true;
 
 
-viewer.scene.globe.enableLighting =
+viewer.scene.globe.showGroundAtmosphere =
   true;
 
 
-/* allow zoom very close */
 
-viewer.scene.screenSpaceCameraController.minimumZoomDistance =
-  5000;
+/*
+Keep satellite imagery bright.
+*/
 
-
-viewer.scene.screenSpaceCameraController.maximumZoomDistance =
-  30000000;
-
+viewer.scene.globe.enableLighting =
+  false;
 
 
-/* =========================================================
-   COUNTRY DATA
-========================================================= */
+
+/*
+Allow close zoom.
+*/
+
+viewer
+.scene
+.screenSpaceCameraController
+.minimumZoomDistance =
+  1000;
+
+
+viewer
+.scene
+.screenSpaceCameraController
+.maximumZoomDistance =
+  50000000;
+
+
+
+/* ==========================================================
+   GLOBAL VARIABLES
+========================================================== */
 
 
 let countries = [];
 
+
 let selectedCountry = null;
 
-let selectedEntity = null;
+
+let selectedBorderSource = null;
 
 
-/* =========================================================
+let cloudObjects = [];
+
+
+let cloudTimer = null;
+
+
+
+/* ==========================================================
    COMMENTS
-========================================================= */
+========================================================== */
 
 
 const comments = [
@@ -490,18 +723,14 @@ const comments = [
 ];
 
 
-let cloudObjects = [];
 
-let cloudTimer = null;
-
-
-
-/* =========================================================
+/* ==========================================================
    NORMALIZE COUNTRY NAME
-========================================================= */
+========================================================== */
 
 
 function normalize(text){
+
 
   return String(text || "")
 
@@ -530,108 +759,9 @@ function normalize(text){
 
 
 
-/* =========================================================
-   LOAD COUNTRY BORDERS
-========================================================= */
-
-
-fetch(
-  "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
-)
-
-.then(
-  response =>
-    response.json()
-)
-
-.then(
-  data => {
-
-    countries =
-      data.features;
-
-
-    drawBorders();
-
-
-    const turkey =
-      countries.find(
-
-        country =>
-
-          normalize(
-            country.properties.name
-          )
-
-          ===
-
-          "turkey"
-
-      );
-
-
-    focusCountry(
-      turkey,
-      false
-    );
-
-  }
-
-);
-
-
-
-/* =========================================================
-   DRAW BORDERS
-========================================================= */
-
-
-async function drawBorders(){
-
-
-  const source =
-    await Cesium.GeoJsonDataSource.load(
-
-      {
-
-        type:
-          "FeatureCollection",
-
-        features:
-          countries
-
-      },
-
-      {
-
-        stroke:
-          Cesium.Color.WHITE.withAlpha(.45),
-
-        fill:
-          Cesium.Color.TRANSPARENT,
-
-        strokeWidth:
-          1.2,
-
-        clampToGround:
-          true
-
-      }
-
-    );
-
-
-  viewer.dataSources.add(
-    source
-  );
-
-}
-
-
-
-/* =========================================================
+/* ==========================================================
    FIND COUNTRY
-========================================================= */
+========================================================== */
 
 
 function findCountry(search){
@@ -675,12 +805,13 @@ function findCountry(search){
   }
 
 
+
   return countries.find(
 
     country =>
 
       normalize(
-        country.properties.name
+        country.properties?.name
       )
 
       ===
@@ -689,19 +820,18 @@ function findCountry(search){
 
   )
 
+
   ||
+
 
   countries.find(
 
     country =>
 
       normalize(
-        country.properties.name
+        country.properties?.name
       )
-
-      .includes(
-        q
-      )
+      .includes(q)
 
   );
 
@@ -709,14 +839,184 @@ function findCountry(search){
 
 
 
-/* =========================================================
-   COUNTRY CAMERA
-========================================================= */
+/* ==========================================================
+   LOAD HIGH RES SATELLITE IMAGERY
+========================================================== */
 
 
-function countryRectangle(
-  country
-){
+async function loadSatelliteImagery(){
+
+
+  const provider =
+
+    await Cesium
+      .ArcGisMapServerImageryProvider
+      .fromUrl(
+
+        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+
+      );
+
+
+  viewer
+    .imageryLayers
+    .addImageryProvider(
+      provider
+    );
+
+}
+
+
+
+/* ==========================================================
+   COUNTRY BORDERS
+========================================================== */
+
+
+async function drawWorldBorders(){
+
+
+  const collection = {
+
+    type:
+      "FeatureCollection",
+
+    features:
+      countries
+
+  };
+
+
+  const source =
+
+    await Cesium
+      .GeoJsonDataSource
+      .load(
+
+        collection,
+
+        {
+
+          stroke:
+
+            Cesium
+            .Color
+            .WHITE
+            .withAlpha(.42),
+
+          fill:
+
+            Cesium
+            .Color
+            .TRANSPARENT,
+
+          strokeWidth:
+            1,
+
+          clampToGround:
+            true
+
+        }
+
+      );
+
+
+  viewer
+    .dataSources
+    .add(
+      source
+    );
+
+}
+
+
+
+/* ==========================================================
+   HIGHLIGHT SELECTED COUNTRY
+========================================================== */
+
+
+async function highlightCountry(country){
+
+
+  if(
+    selectedBorderSource
+  ){
+
+
+    viewer
+      .dataSources
+      .remove(
+
+        selectedBorderSource,
+
+        true
+
+      );
+
+
+    selectedBorderSource =
+      null;
+
+  }
+
+
+
+  selectedBorderSource =
+
+    await Cesium
+      .GeoJsonDataSource
+      .load(
+
+        country,
+
+        {
+
+          stroke:
+
+            Cesium
+            .Color
+            .fromCssColorString(
+              "#ffd66b"
+            )
+            .withAlpha(.95),
+
+          fill:
+
+            Cesium
+            .Color
+            .fromCssColorString(
+              "#ffd66b"
+            )
+            .withAlpha(.05),
+
+          strokeWidth:
+            2,
+
+          clampToGround:
+            true
+
+        }
+
+      );
+
+
+  viewer
+    .dataSources
+    .add(
+      selectedBorderSource
+    );
+
+}
+
+
+
+/* ==========================================================
+   COUNTRY CAMERA RECTANGLE
+========================================================== */
+
+
+function countryRectangle(country){
 
 
   const bbox =
@@ -725,72 +1025,105 @@ function countryRectangle(
     );
 
 
-  return Cesium.Rectangle.fromDegrees(
+  return Cesium
+    .Rectangle
+    .fromDegrees(
 
-    bbox[0],
+      bbox[0],
 
-    bbox[1],
+      bbox[1],
 
-    bbox[2],
+      bbox[2],
 
-    bbox[3]
+      bbox[3]
 
-  );
+    );
 
 }
 
 
 
-/* =========================================================
-   SELECT COUNTRY
-========================================================= */
+/* ==========================================================
+   FOCUS COUNTRY
+========================================================== */
 
 
-function focusCountry(
+async function focusCountry(
+
   country,
+
   animate = true
+
 ){
 
 
   if(
     !country
-  )
+  ){
+
     return;
+
+  }
 
 
   selectedCountry =
     country;
 
 
+
+  const originalName =
+
+    country
+      .properties
+      ?.name;
+
+
+
+  const displayName =
+
+    normalize(
+      originalName
+    )
+
+    ===
+
+    "turkey"
+
+    ?
+
+    "Türkiye"
+
+    :
+
+    originalName;
+
+
+
   document
     .getElementById(
       "countryLabel"
     )
-    .innerText =
-
-      normalize(
-        country.properties.name
-      )
-
-      === "turkey"
-
-      ?
-
-      "Türkiye"
-
-      :
-
-      country.properties.name;
+    .textContent =
+      displayName;
 
 
 
   clearClouds();
 
 
+
+  await highlightCountry(
+    country
+  );
+
+
+
   const rectangle =
+
     countryRectangle(
       country
     );
+
 
 
   if(
@@ -798,15 +1131,21 @@ function focusCountry(
   ){
 
 
-    viewer.camera.flyTo({
+    viewer
+      .camera
+      .flyTo(
 
-      destination:
-        rectangle,
+        {
 
-      duration:
-        1.7
+          destination:
+            rectangle,
 
-    });
+          duration:
+            1.6
+
+        }
+
+      );
 
   }
 
@@ -814,25 +1153,46 @@ function focusCountry(
   else{
 
 
-    viewer.camera.setView({
+    viewer
+      .camera
+      .setView(
 
-      destination:
-        rectangle
+        {
 
-    });
+          destination:
+            rectangle
+
+        }
+
+      );
 
   }
 
 
-  startCloudFlow();
+
+  /*
+  Give camera time to settle,
+  then start reactions.
+  */
+
+
+  setTimeout(
+
+    startCloudFlow,
+
+    animate
+      ? 1200
+      : 300
+
+  );
 
 }
 
 
 
-/* =========================================================
+/* ==========================================================
    RANDOM POINT INSIDE COUNTRY
-========================================================= */
+========================================================== */
 
 
 function randomPointInsideCountry(){
@@ -840,20 +1200,30 @@ function randomPointInsideCountry(){
 
   if(
     !selectedCountry
-  )
+  ){
+
     return null;
+
+  }
+
 
 
   const bbox =
+
     turf.bbox(
       selectedCountry
     );
 
 
+
   for(
-    let i = 0;
-    i < 1000;
-    i++
+
+    let attempt = 0;
+
+    attempt < 1500;
+
+    attempt++
+
   ){
 
 
@@ -864,12 +1234,15 @@ function randomPointInsideCountry(){
       +
 
       Math.random()
+
       *
+
       (
         bbox[2]
         -
         bbox[0]
       );
+
 
 
     const lat =
@@ -879,7 +1252,9 @@ function randomPointInsideCountry(){
       +
 
       Math.random()
+
       *
+
       (
         bbox[3]
         -
@@ -887,20 +1262,30 @@ function randomPointInsideCountry(){
       );
 
 
+
     const point =
+
       turf.point(
+
         [
           lng,
           lat
         ]
+
       );
 
 
+
     if(
+
       turf.booleanPointInPolygon(
+
         point,
+
         selectedCountry
+
       )
+
     ){
 
 
@@ -916,15 +1301,16 @@ function randomPointInsideCountry(){
   }
 
 
+
   return null;
 
 }
 
 
 
-/* =========================================================
-   CLOUD
-========================================================= */
+/* ==========================================================
+   SPAWN CLOUD
+========================================================== */
 
 
 function spawnCloud(){
@@ -932,31 +1318,43 @@ function spawnCloud(){
 
   if(
     !selectedCountry
-  )
+  ){
+
     return;
 
+  }
 
-  const point =
+
+
+  const location =
     randomPointInsideCountry();
 
 
+
   if(
-    !point
-  )
+    !location
+  ){
+
     return;
+
+  }
+
 
 
   const element =
-    document.createElement(
-      "div"
-    );
+
+    document
+      .createElement(
+        "div"
+      );
 
 
   element.className =
     "cloud";
 
 
-  element.innerText =
+
+  element.textContent =
 
     comments[
 
@@ -973,6 +1371,7 @@ function spawnCloud(){
     ];
 
 
+
   document
     .getElementById(
       "cloudLayer"
@@ -982,29 +1381,48 @@ function spawnCloud(){
     );
 
 
-  const cloud = {
 
-    element,
+  const position =
 
-    lat:
-      point.lat,
+    Cesium
+      .Cartesian3
+      .fromDegrees(
 
-    lng:
-      point.lng,
+        location.lng,
 
-    position:
-
-      Cesium.Cartesian3.fromDegrees(
-
-        point.lng,
-
-        point.lat,
+        location.lat,
 
         7000
 
-      )
+      );
+
+
+
+  const cloud = {
+
+    id:
+      crypto.randomUUID
+      ?
+      crypto.randomUUID()
+      :
+      String(
+        Date.now()
+        +
+        Math.random()
+      ),
+
+    element,
+
+    position,
+
+    lat:
+      location.lat,
+
+    lng:
+      location.lng
 
   };
+
 
 
   cloudObjects.push(
@@ -1012,29 +1430,41 @@ function spawnCloud(){
   );
 
 
+
+  /*
+  Maximum 3 clouds at once.
+  */
+
+
   if(
     cloudObjects.length > 3
   ){
 
 
-    const old =
+    const oldest =
       cloudObjects.shift();
 
 
-    old.element.remove();
+    oldest
+      .element
+      .remove();
 
   }
 
 
 
-  /* remove after animation */
+  /*
+  Remove after animation.
+  */
 
 
   setTimeout(
+
     ()=>{
 
 
       cloudObjects =
+
         cloudObjects.filter(
 
           item =>
@@ -1055,12 +1485,18 @@ function spawnCloud(){
 
 
 
-/* =========================================================
-   MOVE HTML CLOUD WITH EARTH
-========================================================= */
+/* ==========================================================
+   POSITION CLOUDS ON 3D EARTH
+
+   IMPORTANT:
+   This is the corrected Cesium API.
+========================================================== */
 
 
-viewer.scene.postRender.addEventListener(
+viewer
+.scene
+.postRender
+.addEventListener(
 
   ()=>{
 
@@ -1070,40 +1506,63 @@ viewer.scene.postRender.addEventListener(
       cloud =>{
 
 
-        const windowPosition =
+        const screenPosition =
 
-          Cesium.SceneTransforms
-          .wgs84ToWindowCoordinates(
+          Cesium
+            .SceneTransforms
+            .worldToWindowCoordinates(
 
-            viewer.scene,
+              viewer.scene,
 
-            cloud.position
+              cloud.position
 
-          );
+            );
+
 
 
         if(
-          !windowPosition
+          !screenPosition
         ){
 
-          cloud.element.style.display =
-            "none";
+
+          cloud
+            .element
+            .style
+            .display =
+              "none";
+
 
           return;
 
         }
 
 
-        cloud.element.style.display =
-          "block";
+
+        cloud
+          .element
+          .style
+          .display =
+            "block";
 
 
-        cloud.element.style.left =
-          windowPosition.x + "px";
+
+        cloud
+          .element
+          .style
+          .left =
+            screenPosition.x
+            +
+            "px";
 
 
-        cloud.element.style.top =
-          windowPosition.y + "px";
+
+        cloud
+          .element
+          .style
+          .top =
+            screenPosition.y
+            +
+            "px";
 
       }
 
@@ -1115,15 +1574,15 @@ viewer.scene.postRender.addEventListener(
 
 
 
-/* =========================================================
+/* ==========================================================
    CLOUD FLOW
-========================================================= */
+========================================================== */
 
 
-function scheduleCloud(){
+function scheduleNextCloud(){
 
 
-  const wait =
+  const delay =
 
     1800
 
@@ -1134,7 +1593,9 @@ function scheduleCloud(){
     3200;
 
 
+
   cloudTimer =
+
     setTimeout(
 
       ()=>{
@@ -1142,11 +1603,12 @@ function scheduleCloud(){
 
         spawnCloud();
 
-        scheduleCloud();
+
+        scheduleNextCloud();
 
       },
 
-      wait
+      delay
 
     );
 
@@ -1165,10 +1627,29 @@ function startCloudFlow(){
   spawnCloud();
 
 
-  scheduleCloud();
+  cloudTimer =
+
+    setTimeout(
+
+      ()=>{
+
+        spawnCloud();
+
+        scheduleNextCloud();
+
+      },
+
+      2200
+
+    );
 
 }
 
+
+
+/* ==========================================================
+   CLEAR CLOUDS
+========================================================== */
 
 
 function clearClouds(){
@@ -1179,10 +1660,16 @@ function clearClouds(){
   );
 
 
+
   cloudObjects.forEach(
 
-    cloud =>
-      cloud.element.remove()
+    cloud =>{
+
+      cloud
+        .element
+        .remove();
+
+    }
 
   );
 
@@ -1193,17 +1680,15 @@ function clearClouds(){
 
 
 
-/* =========================================================
+/* ==========================================================
    SEARCH
-========================================================= */
+========================================================== */
 
 
 document
-
   .getElementById(
     "search"
   )
-
   .addEventListener(
 
     "submit",
@@ -1214,21 +1699,23 @@ document
       event.preventDefault();
 
 
-      const search =
+
+      const value =
 
         document
-
           .getElementById(
             "countryInput"
           )
-
           .value;
 
 
+
       const country =
+
         findCountry(
-          search
+          value
         );
+
 
 
       if(
@@ -1237,7 +1724,8 @@ document
 
 
         focusCountry(
-          country
+          country,
+          true
         );
 
 
@@ -1253,7 +1741,127 @@ document
 
   );
 
+
+
+/* ==========================================================
+   INITIALIZE APP
+========================================================== */
+
+
+async function initialize(){
+
+
+  try{
+
+
+    /*
+    Load satellite tiles.
+    */
+
+
+    await loadSatelliteImagery();
+
+
+
+    /*
+    Load countries.
+    */
+
+
+    const response =
+
+      await fetch(
+
+        "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
+
+      );
+
+
+
+    const data =
+      await response.json();
+
+
+
+    countries =
+      data.features;
+
+
+
+    /*
+    Draw world borders.
+    */
+
+
+    await drawWorldBorders();
+
+
+
+    /*
+    Start on Türkiye.
+    */
+
+
+    const turkey =
+
+      countries.find(
+
+        country =>
+
+          normalize(
+            country.properties?.name
+          )
+
+          ===
+
+          "turkey"
+
+      );
+
+
+
+    await focusCountry(
+
+      turkey,
+
+      false
+
+    );
+
+
+  }
+
+
+  catch(error){
+
+
+    console.error(
+      error
+    );
+
+
+    document
+      .getElementById(
+        "status"
+      )
+      .innerHTML =
+
+      "<strong>Loading error</strong> · check console";
+
+  }
+
+}
+
+
+
+/* START */
+
+initialize();
+
+
 </script>
 
+
 </body>
+
 </html>
