@@ -22,25 +22,26 @@
 <!-- TURF -->
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
 
+
 <style>
 
-*{
-  box-sizing:border-box;
+* {
+  box-sizing: border-box;
 }
 
 html,
 body,
-#cesiumContainer{
+#cesiumContainer {
 
-  width:100%;
-  height:100%;
+  width: 100%;
+  height: 100%;
 
-  margin:0;
-  padding:0;
+  margin: 0;
+  padding: 0;
 
-  overflow:hidden;
+  overflow: hidden;
 
-  background:#000;
+  background: #000;
 
   font-family:
     -apple-system,
@@ -50,116 +51,126 @@ body,
 }
 
 
-/* Hide only unnecessary controls */
+/* =========================================
+   CESIUM
+========================================= */
 
-.cesium-viewer-toolbar{
-  display:none!important;
+.cesium-viewer-toolbar {
+  display: none !important;
 }
 
 
-/* ==============================
+/* =========================================
    SEARCH
-============================== */
+========================================= */
 
-#ui{
+#ui {
 
-  position:fixed;
+  position: fixed;
 
-  top:24px;
-  left:50%;
+  top: 24px;
+  left: 50%;
 
-  transform:translateX(-50%);
+  transform: translateX(-50%);
 
-  width:min(90vw,440px);
+  width: min(90vw, 440px);
 
-  z-index:1000;
+  z-index: 1000;
 
 }
 
-#search{
 
-  display:flex;
+#search {
 
-  gap:8px;
+  display: flex;
 
-  padding:8px;
+  gap: 8px;
 
-  border-radius:20px;
+  padding: 8px;
+
+  border-radius: 20px;
 
   background:
-    rgba(5,11,22,.76);
+    rgba(5, 11, 22, .76);
 
   border:
     1px solid rgba(255,255,255,.13);
 
-  backdrop-filter:blur(18px);
+  backdrop-filter: blur(18px);
+
+  -webkit-backdrop-filter: blur(18px);
 
   box-shadow:
     0 15px 40px rgba(0,0,0,.35);
 
 }
 
-#countryInput{
 
-  flex:1;
+#countryInput {
 
-  border:none;
-  outline:none;
+  flex: 1;
 
-  padding:13px 15px;
+  min-width: 0;
 
-  border-radius:14px;
+  border: none;
+  outline: none;
+
+  padding: 13px 15px;
+
+  border-radius: 14px;
 
   background:
     rgba(255,255,255,.08);
 
-  color:white;
+  color: white;
 
-  font-size:15px;
+  font-size: 15px;
 
 }
 
-#countryInput::placeholder{
+
+#countryInput::placeholder {
 
   color:
     rgba(255,255,255,.5);
 
 }
 
-#focusButton{
 
-  border:none;
+#focusButton {
 
-  border-radius:14px;
+  border: none;
 
-  padding:0 18px;
+  border-radius: 14px;
 
-  background:white;
+  padding: 0 18px;
 
-  color:#09111d;
+  background: white;
 
-  font-weight:700;
+  color: #09111d;
 
-  cursor:pointer;
+  font-weight: 700;
+
+  cursor: pointer;
 
 }
 
 
-/* ==============================
-   COUNTRY STATUS
-============================== */
+/* =========================================
+   STATUS
+========================================= */
 
-#status{
+#status {
 
-  width:max-content;
+  width: max-content;
 
-  max-width:90%;
+  max-width: 90%;
 
-  margin:9px auto 0;
+  margin: 9px auto 0;
 
-  padding:7px 13px;
+  padding: 7px 13px;
 
-  border-radius:999px;
+  border-radius: 999px;
 
   background:
     rgba(5,11,22,.65);
@@ -167,62 +178,66 @@ body,
   border:
     1px solid rgba(255,255,255,.10);
 
-  backdrop-filter:
-    blur(12px);
+  backdrop-filter: blur(12px);
 
   color:
     rgba(255,255,255,.65);
 
-  font-size:11px;
+  font-size: 11px;
 
 }
 
-#status strong{
-  color:white;
+
+#status strong {
+
+  color: white;
+
 }
 
 
-/* ==============================
+/* =========================================
    CLOUD LAYER
-============================== */
+========================================= */
 
-#cloudLayer{
+#cloudLayer {
 
-  position:fixed;
+  position: fixed;
 
-  inset:0;
+  inset: 0;
 
-  pointer-events:none;
+  pointer-events: none;
 
-  z-index:500;
+  z-index: 500;
+
+  overflow: hidden;
 
 }
 
 
-/* ==============================
+/* =========================================
    CLOUD
-============================== */
+========================================= */
 
-.cloud{
+.cloud {
 
-  position:absolute;
+  position: absolute;
 
-  min-width:70px;
-  max-width:105px;
+  min-width: 70px;
+  max-width: 105px;
 
-  padding:8px 11px;
+  padding: 8px 11px;
 
-  color:#142336;
+  color: #142336;
 
-  font-size:9px;
+  font-size: 9px;
 
-  font-weight:700;
+  font-weight: 700;
 
-  text-align:center;
+  text-align: center;
 
-  border-radius:999px;
+  border-radius: 999px;
 
-  opacity:0;
+  opacity: 0;
 
 
   background:
@@ -282,78 +297,78 @@ body,
 }
 
 
-.cloud::before{
+.cloud::before {
 
-  content:"";
+  content: "";
 
-  position:absolute;
+  position: absolute;
 
-  width:30px;
-  height:30px;
+  width: 30px;
+  height: 30px;
 
-  left:13px;
-  top:-12px;
+  left: 13px;
+  top: -12px;
 
-  border-radius:50%;
+  border-radius: 50%;
 
-  background:white;
+  background: white;
 
-  z-index:-1;
-
-}
-
-
-.cloud::after{
-
-  content:"";
-
-  position:absolute;
-
-  width:36px;
-  height:36px;
-
-  right:13px;
-  top:-15px;
-
-  border-radius:50%;
-
-  background:#f9fcff;
-
-  z-index:-1;
+  z-index: -1;
 
 }
 
 
-@keyframes cloudLife{
+.cloud::after {
 
-  0%{
+  content: "";
 
-    opacity:0;
+  position: absolute;
+
+  width: 36px;
+  height: 36px;
+
+  right: 13px;
+  top: -15px;
+
+  border-radius: 50%;
+
+  background: #f9fcff;
+
+  z-index: -1;
+
+}
+
+
+@keyframes cloudLife {
+
+  0% {
+
+    opacity: 0;
 
     transform:
       translate(-50%,-50%)
       translateY(10px)
       scale(.15);
 
-    filter:blur(3px);
+    filter: blur(3px);
 
   }
 
-  15%{
+  15% {
 
-    opacity:1;
+    opacity: 1;
 
     transform:
       translate(-50%,-50%)
       scale(1);
 
-    filter:blur(0);
+    filter: blur(0);
 
   }
 
-  65%{
+  65% {
 
-    opacity:1;
+    opacity: 1;
 
     transform:
       translate(-50%,-50%)
@@ -362,62 +377,62 @@ body,
 
   }
 
-  100%{
+  100% {
 
-    opacity:0;
+    opacity: 0;
 
     transform:
       translate(-50%,-50%)
       translateY(-18px)
       scale(.82);
 
-    filter:blur(2px);
+    filter: blur(2px);
 
   }
 
 }
 
 
-@keyframes cloudFloat{
+@keyframes cloudFloat {
 
-  from{
+  from {
 
-    margin-left:-5px;
-    margin-top:3px;
+    margin-left: -5px;
+    margin-top: 3px;
 
   }
 
-  to{
+  to {
 
-    margin-left:7px;
-    margin-top:-5px;
+    margin-left: 7px;
+    margin-top: -5px;
 
   }
 
 }
 
 
-/* ==================================
-   SUN VISUAL
-================================== */
+/* =========================================
+   SUN
+========================================= */
 
-#sunGlow{
+#sunGlow {
 
-  position:fixed;
+  position: fixed;
 
-  z-index:20;
+  z-index: 20;
 
-  width:220px;
-  height:220px;
+  width: 220px;
+  height: 220px;
 
-  left:-90px;
-  top:-80px;
+  left: -90px;
+  top: -80px;
 
-  border-radius:50%;
+  border-radius: 50%;
 
-  pointer-events:none;
+  pointer-events: none;
 
-  opacity:0;
+  opacity: 0;
 
   transition:
     opacity 1.2s ease;
@@ -437,12 +452,10 @@ body,
       rgba(255,140,30,.18) 48%,
 
       transparent 70%
-
     );
 
 
-  filter:
-    blur(2px);
+  filter: blur(2px);
 
 
   box-shadow:
@@ -456,40 +469,38 @@ body,
 }
 
 
-/* ==================================
+/* =========================================
    SUN RAYS
-================================== */
+========================================= */
 
-.sunRay{
+.sunRay {
 
-  position:fixed;
+  position: fixed;
 
-  z-index:19;
+  z-index: 19;
 
-  left:-70px;
+  left: -70px;
 
-  width:900px;
-  height:90px;
+  width: 900px;
+  height: 90px;
 
-  pointer-events:none;
+  pointer-events: none;
 
-  opacity:0;
+  opacity: 0;
 
-  transform-origin:left center;
+  transform-origin: left center;
 
   transition:
     opacity 1.2s ease;
 
-  filter:
-    blur(18px);
+  filter: blur(18px);
 
-  mix-blend-mode:screen;
+  mix-blend-mode: screen;
 
 
   background:
 
     linear-gradient(
-
       90deg,
 
       rgba(255,235,170,.22),
@@ -497,72 +508,55 @@ body,
       rgba(255,205,120,.10),
 
       transparent
-
     );
 
 }
 
 
-#ray1{
+#ray1 {
+  top: 20px;
+  transform: rotate(17deg);
+}
 
-  top:20px;
 
-  transform:
-    rotate(17deg);
+#ray2 {
+  top: 80px;
+  transform: rotate(27deg);
+}
+
+
+#ray3 {
+  top: 145px;
+  transform: rotate(37deg);
+}
+
+
+#ray4 {
+  top: 205px;
+  transform: rotate(47deg);
+}
+
+
+.spaceVisible {
+
+  opacity: 1 !important;
 
 }
 
 
-#ray2{
+/* =========================================
+   VIGNETTE
+========================================= */
 
-  top:80px;
+#vignette {
 
-  transform:
-    rotate(27deg);
+  position: fixed;
 
-}
+  inset: 0;
 
+  pointer-events: none;
 
-#ray3{
-
-  top:145px;
-
-  transform:
-    rotate(37deg);
-
-}
-
-
-#ray4{
-
-  top:205px;
-
-  transform:
-    rotate(47deg);
-
-}
-
-
-/* far away => sun visible */
-
-.spaceVisible{
-
-  opacity:1!important;
-
-}
-
-
-/* vignette */
-
-#vignette{
-
-  position:fixed;
-
-  inset:0;
-
-  pointer-events:none;
-
-  z-index:30;
+  z-index: 30;
 
   box-shadow:
 
@@ -572,6 +566,7 @@ body,
 }
 
 </style>
+
 </head>
 
 
@@ -585,29 +580,15 @@ body,
 
 <div id="sunGlow"></div>
 
-<div
-  id="ray1"
-  class="sunRay">
-</div>
+<div id="ray1" class="sunRay"></div>
 
-<div
-  id="ray2"
-  class="sunRay">
-</div>
+<div id="ray2" class="sunRay"></div>
 
-<div
-  id="ray3"
-  class="sunRay">
-</div>
+<div id="ray3" class="sunRay"></div>
 
-<div
-  id="ray4"
-  class="sunRay">
-</div>
-
+<div id="ray4" class="sunRay"></div>
 
 <div id="vignette"></div>
-
 
 
 <!-- UI -->
@@ -624,10 +605,9 @@ body,
 
 <button
   id="focusButton"
-  type="submit">
-
+  type="submit"
+>
 Focus
-
 </button>
 
 </form>
@@ -649,13 +629,12 @@ Türkiye
 <div id="cloudLayer"></div>
 
 
-
 <script>
 
 
-/* ==========================================================
-   CESIUM
-========================================================== */
+/* =========================================================
+   CESIUM VIEWER
+========================================================= */
 
 
 const viewer =
@@ -666,29 +645,29 @@ const viewer =
 
     {
 
-      animation:false,
+      animation: false,
 
-      timeline:false,
+      timeline: false,
 
-      baseLayerPicker:false,
+      baseLayerPicker: false,
 
-      geocoder:false,
+      geocoder: false,
 
-      homeButton:false,
+      homeButton: false,
 
-      sceneModePicker:false,
+      sceneModePicker: false,
 
-      navigationHelpButton:false,
+      navigationHelpButton: false,
 
-      fullscreenButton:false,
+      fullscreenButton: false,
 
-      infoBox:false,
+      infoBox: false,
 
-      selectionIndicator:false,
+      selectionIndicator: false,
 
-      shouldAnimate:true,
+      shouldAnimate: true,
 
-      baseLayer:false,
+      baseLayer: false,
 
       terrainProvider:
         new Cesium.EllipsoidTerrainProvider()
@@ -699,9 +678,9 @@ const viewer =
 
 
 
-/* ==========================================================
+/* =========================================================
    QUALITY
-========================================================== */
+========================================================= */
 
 
 viewer.resolutionScale =
@@ -735,16 +714,10 @@ viewer.scene.fxaa =
   true;
 
 
+/* =========================================================
+   SPACE
+========================================================= */
 
-/* ==========================================================
-   SPACE / STARS
-========================================================== */
-
-
-/*
-Cesium already contains a star skybox.
-Make sure it stays enabled.
-*/
 
 viewer.scene.skyBox.show =
   true;
@@ -762,37 +735,26 @@ viewer.scene.moon.show =
   true;
 
 
-/*
-Show atmosphere around Earth.
-*/
-
 viewer.scene.globe.showGroundAtmosphere =
   true;
 
-
-/*
-Keep satellite imagery readable.
-*/
 
 viewer.scene.globe.enableLighting =
   false;
 
 
-
-/* ==========================================================
-   ZOOM LIMITS
-========================================================== */
+/* =========================================================
+   ZOOM LIMIT
+========================================================= */
 
 
 /*
-IMPORTANT:
+120000 = 120 km.
 
-User cannot get closer than
-120 km.
+Increase this if you want
+to restrict zoom even more.
 
-Increase this if you want less zoom.
-
-120000 = 120 km
+Example:
 200000 = 200 km
 */
 
@@ -803,11 +765,6 @@ viewer
   120000;
 
 
-/*
-Allow zooming far enough
-to see Earth in space.
-*/
-
 viewer
 .scene
 .screenSpaceCameraController
@@ -816,9 +773,9 @@ viewer
 
 
 
-/* ==========================================================
+/* =========================================================
    VARIABLES
-========================================================== */
+========================================================= */
 
 
 let countries = [];
@@ -827,7 +784,28 @@ let countries = [];
 let selectedCountry = null;
 
 
-let selectedBorderSource = null;
+/*
+ALL WORLD BORDERS
+*/
+
+let worldBorderBackSource =
+  null;
+
+
+let worldBorderFrontSource =
+  null;
+
+
+/*
+SELECTED COUNTRY BORDER
+*/
+
+let selectedBorderBackSource =
+  null;
+
+
+let selectedBorderFrontSource =
+  null;
 
 
 let cloudObjects = [];
@@ -837,9 +815,9 @@ let cloudTimer = null;
 
 
 
-/* ==========================================================
-   MICROCOMMENTS
-========================================================== */
+/* =========================================================
+   COMMENTS
+========================================================= */
 
 
 const comments = [
@@ -872,12 +850,12 @@ const comments = [
 
 
 
-/* ==========================================================
+/* =========================================================
    NORMALIZE
-========================================================== */
+========================================================= */
 
 
-function normalize(text){
+function normalize(text) {
 
   return String(text || "")
 
@@ -906,41 +884,41 @@ function normalize(text){
 
 
 
-/* ==========================================================
+/* =========================================================
    SATELLITE IMAGERY
-========================================================== */
+========================================================= */
 
 
-async function loadSatelliteImagery(){
+async function loadSatelliteImagery() {
 
 
   const provider =
 
     await Cesium
-      .ArcGisMapServerImageryProvider
-      .fromUrl(
+    .ArcGisMapServerImageryProvider
+    .fromUrl(
 
-        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
+      "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer"
 
-      );
+    );
 
 
   viewer
-    .imageryLayers
-    .addImageryProvider(
-      provider
-    );
+  .imageryLayers
+  .addImageryProvider(
+    provider
+  );
 
 }
 
 
 
-/* ==========================================================
+/* =========================================================
    FIND COUNTRY
-========================================================== */
+========================================================= */
 
 
-function findCountry(search){
+function findCountry(search) {
 
 
   let q =
@@ -951,7 +929,7 @@ function findCountry(search){
 
   if(
     q === "turkiye"
-  ){
+  ) {
 
     q =
       "turkey";
@@ -963,7 +941,7 @@ function findCountry(search){
     q === "usa"
     ||
     q === "us"
-  ){
+  ) {
 
     q =
       "unitedstatesofamerica";
@@ -973,7 +951,7 @@ function findCountry(search){
 
   if(
     q === "uk"
-  ){
+  ) {
 
     q =
       "unitedkingdom";
@@ -1014,158 +992,298 @@ function findCountry(search){
 
 
 
-/* ==========================================================
-   DRAW ALL COUNTRY BORDERS
-========================================================== */
+/* =========================================================
+   WORLD COUNTRY BORDERS
+
+   DOUBLE LAYER:
+
+   BLACK THICK BORDER
+   +
+   WHITE THINNER BORDER
+========================================================= */
 
 
-async function drawWorldBorders(){
+async function drawWorldBorders() {
 
 
-  const source =
+  const collection = {
+
+    type:
+      "FeatureCollection",
+
+    features:
+      countries
+
+  };
+
+
+  /*
+  DARK BORDER UNDERNEATH
+  */
+
+
+  worldBorderBackSource =
 
     await Cesium
-      .GeoJsonDataSource
-      .load(
+    .GeoJsonDataSource
+    .load(
 
-        {
+      collection,
 
-          type:
-            "FeatureCollection",
+      {
 
-          features:
-            countries
+        stroke:
 
-        },
+          Cesium
+          .Color
+          .BLACK
+          .withAlpha(.88),
 
-        {
+        fill:
 
-          stroke:
+          Cesium
+          .Color
+          .TRANSPARENT,
 
-            Cesium
-            .Color
-            .WHITE
-            .withAlpha(.72),
+        strokeWidth:
+          5,
 
+        clampToGround:
+          true
 
-          fill:
+      }
 
-            Cesium
-            .Color
-            .TRANSPARENT,
-
-
-          strokeWidth:
-            1.6,
-
-
-          clampToGround:
-            true
-
-        }
-
-      );
+    );
 
 
   viewer
-    .dataSources
-    .add(
-      source
+  .dataSources
+  .add(
+    worldBorderBackSource
+  );
+
+
+
+  /*
+  BRIGHT WHITE BORDER
+  */
+
+
+  worldBorderFrontSource =
+
+    await Cesium
+    .GeoJsonDataSource
+    .load(
+
+      collection,
+
+      {
+
+        stroke:
+
+          Cesium
+          .Color
+          .WHITE
+          .withAlpha(.92),
+
+        fill:
+
+          Cesium
+          .Color
+          .TRANSPARENT,
+
+        strokeWidth:
+          2,
+
+        clampToGround:
+          true
+
+      }
+
     );
+
+
+  viewer
+  .dataSources
+  .add(
+    worldBorderFrontSource
+  );
 
 }
 
 
 
-/* ==========================================================
-   SELECTED COUNTRY BORDER
-========================================================== */
+/* =========================================================
+   SELECTED COUNTRY
+
+   VERY STRONG BORDER:
+
+   BLACK HALO
+   +
+   GOLD BORDER
+========================================================= */
 
 
-async function highlightCountry(country){
+async function highlightCountry(country) {
+
+
+  /*
+  REMOVE OLD SELECTED COUNTRY
+  */
 
 
   if(
-    selectedBorderSource
-  ){
+    selectedBorderBackSource
+  ) {
 
 
     viewer
-      .dataSources
-      .remove(
+    .dataSources
+    .remove(
 
-        selectedBorderSource,
+      selectedBorderBackSource,
 
-        true
+      true
 
-      );
+    );
 
 
-    selectedBorderSource =
+    selectedBorderBackSource =
+      null;
+
+  }
+
+
+  if(
+    selectedBorderFrontSource
+  ) {
+
+
+    viewer
+    .dataSources
+    .remove(
+
+      selectedBorderFrontSource,
+
+      true
+
+    );
+
+
+    selectedBorderFrontSource =
       null;
 
   }
 
 
 
-  selectedBorderSource =
+  /*
+  THICK BLACK HALO
+  */
+
+
+  selectedBorderBackSource =
 
     await Cesium
-      .GeoJsonDataSource
-      .load(
+    .GeoJsonDataSource
+    .load(
 
-        country,
+      country,
 
-        {
+      {
 
-          stroke:
+        stroke:
 
-            Cesium
-            .Color
-            .fromCssColorString(
-              "#ffd66b"
-            )
-            .withAlpha(.98),
+          Cesium
+          .Color
+          .BLACK
+          .withAlpha(.97),
 
+        fill:
 
-          fill:
+          Cesium
+          .Color
+          .fromCssColorString(
+            "#FFD54A"
+          )
+          .withAlpha(.08),
 
-            Cesium
-            .Color
-            .fromCssColorString(
-              "#ffd66b"
-            )
-            .withAlpha(.035),
+        strokeWidth:
+          10,
 
+        clampToGround:
+          true
 
-          strokeWidth:
-            4,
+      }
 
-
-          clampToGround:
-            true
-
-        }
-
-      );
+    );
 
 
   viewer
-    .dataSources
-    .add(
-      selectedBorderSource
+  .dataSources
+  .add(
+    selectedBorderBackSource
+  );
+
+
+
+  /*
+  BRIGHT GOLD BORDER
+  */
+
+
+  selectedBorderFrontSource =
+
+    await Cesium
+    .GeoJsonDataSource
+    .load(
+
+      country,
+
+      {
+
+        stroke:
+
+          Cesium
+          .Color
+          .fromCssColorString(
+            "#FFD54A"
+          )
+          .withAlpha(1),
+
+        fill:
+
+          Cesium
+          .Color
+          .TRANSPARENT,
+
+        strokeWidth:
+          4,
+
+        clampToGround:
+          true
+
+      }
+
     );
+
+
+  viewer
+  .dataSources
+  .add(
+    selectedBorderFrontSource
+  );
 
 }
 
 
 
-/* ==========================================================
+/* =========================================================
    COUNTRY RECTANGLE
-========================================================== */
+========================================================= */
 
 
-function countryRectangle(country){
+function countryRectangle(country) {
 
 
   const bbox =
@@ -1175,26 +1293,26 @@ function countryRectangle(country){
 
 
   return Cesium
-    .Rectangle
-    .fromDegrees(
+  .Rectangle
+  .fromDegrees(
 
-      bbox[0],
+    bbox[0],
 
-      bbox[1],
+    bbox[1],
 
-      bbox[2],
+    bbox[2],
 
-      bbox[3]
+    bbox[3]
 
-    );
+  );
 
 }
 
 
 
-/* ==========================================================
+/* =========================================================
    FOCUS COUNTRY
-========================================================== */
+========================================================= */
 
 
 async function focusCountry(
@@ -1203,12 +1321,12 @@ async function focusCountry(
 
   animate = true
 
-){
+) {
 
 
   if(
     !country
-  ){
+  ) {
 
     return;
 
@@ -1219,40 +1337,36 @@ async function focusCountry(
     country;
 
 
-
   const name =
     country.properties?.name;
 
 
-
   document
-    .getElementById(
-      "countryLabel"
-    )
-    .textContent =
+  .getElementById(
+    "countryLabel"
+  )
+  .textContent =
 
-      normalize(name)
-      ===
-      "turkey"
+    normalize(name)
+    ===
+    "turkey"
 
-      ?
+    ?
 
-      "Türkiye"
+    "Türkiye"
 
-      :
+    :
 
-      name;
+    name;
 
 
 
   clearClouds();
 
 
-
   await highlightCountry(
     country
   );
-
 
 
   const rectangle =
@@ -1262,46 +1376,45 @@ async function focusCountry(
     );
 
 
-
   if(
     animate
-  ){
+  ) {
 
 
     viewer
-      .camera
-      .flyTo(
+    .camera
+    .flyTo(
 
-        {
+      {
 
-          destination:
-            rectangle,
+        destination:
+          rectangle,
 
-          duration:
-            1.7
+        duration:
+          1.7
 
-        }
+      }
 
-      );
+    );
 
   }
 
 
-  else{
+  else {
 
 
     viewer
-      .camera
-      .setView(
+    .camera
+    .setView(
 
-        {
+      {
 
-          destination:
-            rectangle
+        destination:
+          rectangle
 
-        }
+      }
 
-      );
+    );
 
   }
 
@@ -1312,10 +1425,10 @@ async function focusCountry(
     startCloudFlow,
 
     animate
-      ?
-      1300
-      :
-      350
+    ?
+    1300
+    :
+    350
 
   );
 
@@ -1323,26 +1436,38 @@ async function focusCountry(
 
 
 
-/* ==========================================================
-   SAFE CLOUD AREA
+/* =========================================================
+   SAFE COUNTRY AREA
 
-   Shrinks country slightly,
-   so clouds aren't generated
-   directly on the border.
-========================================================== */
+   We shrink the country.
+
+   This prevents clouds
+   appearing directly
+   on borders.
+========================================================= */
 
 
-function getSafeCountryArea(){
+function getSafeCountryArea() {
 
 
   if(
     !selectedCountry
-  ){
+  ) {
 
     return null;
 
   }
 
+
+  /*
+  Try progressively
+  smaller inward buffers.
+
+  Large countries use
+  the larger safety margin.
+
+  Small countries fall back.
+  */
 
 
   const distances = [
@@ -1353,7 +1478,9 @@ function getSafeCountryArea(){
 
     -20,
 
-    -10
+    -10,
+
+    -5
 
   ];
 
@@ -1362,10 +1489,10 @@ function getSafeCountryArea(){
   for(
     const distance
     of distances
-  ){
+  ) {
 
 
-    try{
+    try {
 
 
       const safe =
@@ -1377,8 +1504,10 @@ function getSafeCountryArea(){
           distance,
 
           {
+
             units:
               "kilometers"
+
           }
 
         );
@@ -1386,7 +1515,7 @@ function getSafeCountryArea(){
 
       if(
         safe
-      ){
+      ) {
 
         return safe;
 
@@ -1394,16 +1523,10 @@ function getSafeCountryArea(){
 
 
     }
-    catch(error){
 
-      console.log(
-        "buffer fallback"
-      );
-
-    }
+    catch(error) {}
 
   }
-
 
 
   return selectedCountry;
@@ -1412,27 +1535,25 @@ function getSafeCountryArea(){
 
 
 
-/* ==========================================================
-   RANDOM POINT INSIDE COUNTRY
-========================================================== */
+/* =========================================================
+   RANDOM POINT INSIDE SAFE COUNTRY
+========================================================= */
 
 
-function randomPointInsideCountry(){
+function randomPointInsideCountry() {
 
 
   const safeCountry =
     getSafeCountryArea();
 
 
-
   if(
     !safeCountry
-  ){
+  ) {
 
     return null;
 
   }
-
 
 
   const bbox =
@@ -1440,7 +1561,6 @@ function randomPointInsideCountry(){
     turf.bbox(
       safeCountry
     );
-
 
 
   for(
@@ -1451,7 +1571,7 @@ function randomPointInsideCountry(){
 
     attempt++
 
-  ){
+  ) {
 
 
     const lng =
@@ -1471,7 +1591,6 @@ function randomPointInsideCountry(){
       );
 
 
-
     const lat =
 
       bbox[1]
@@ -1489,7 +1608,6 @@ function randomPointInsideCountry(){
       );
 
 
-
     const point =
 
       turf.point(
@@ -1502,8 +1620,7 @@ function randomPointInsideCountry(){
       );
 
 
-
-    try{
+    try {
 
 
       if(
@@ -1516,7 +1633,7 @@ function randomPointInsideCountry(){
 
         )
 
-      ){
+      ) {
 
 
         return {
@@ -1530,11 +1647,10 @@ function randomPointInsideCountry(){
 
 
     }
-    catch(error){}
 
+    catch(error) {}
 
   }
-
 
 
   return null;
@@ -1543,50 +1659,46 @@ function randomPointInsideCountry(){
 
 
 
-/* ==========================================================
+/* =========================================================
    SPAWN CLOUD
-========================================================== */
+========================================================= */
 
 
-function spawnCloud(){
+function spawnCloud() {
 
 
   if(
     !selectedCountry
-  ){
+  ) {
 
     return;
 
   }
-
 
 
   const location =
     randomPointInsideCountry();
 
 
-
   if(
     !location
-  ){
+  ) {
 
     return;
 
   }
 
 
-
   const element =
 
     document
-      .createElement(
-        "div"
-      );
+    .createElement(
+      "div"
+    );
 
 
   element.className =
     "cloud";
-
 
 
   element.textContent =
@@ -1606,31 +1718,28 @@ function spawnCloud(){
     ];
 
 
-
   document
-    .getElementById(
-      "cloudLayer"
-    )
-    .appendChild(
-      element
-    );
-
+  .getElementById(
+    "cloudLayer"
+  )
+  .appendChild(
+    element
+  );
 
 
   const position =
 
     Cesium
-      .Cartesian3
-      .fromDegrees(
+    .Cartesian3
+    .fromDegrees(
 
-        location.lng,
+      location.lng,
 
-        location.lat,
+      location.lat,
 
-        6000
+      6000
 
-      );
-
+    );
 
 
   const cloud = {
@@ -1647,21 +1756,19 @@ function spawnCloud(){
   };
 
 
-
   cloudObjects.push(
     cloud
   );
 
 
-
   /*
-  Maximum 3 clouds.
+  MAXIMUM 3 CLOUDS
   */
 
 
   if(
     cloudObjects.length > 3
-  ){
+  ) {
 
 
     const oldest =
@@ -1669,21 +1776,20 @@ function spawnCloud(){
 
 
     oldest
-      .element
-      .remove();
+    .element
+    .remove();
 
   }
 
 
-
   /*
-  Remove after animation.
+  REMOVE CLOUD
   */
 
 
   setTimeout(
 
-    ()=>{
+    ()=> {
 
 
       cloudObjects =
@@ -1708,9 +1814,9 @@ function spawnCloud(){
 
 
 
-/* ==========================================================
+/* =========================================================
    PROJECT CLOUD TO SCREEN
-========================================================== */
+========================================================= */
 
 
 viewer
@@ -1718,38 +1824,37 @@ viewer
 .postRender
 .addEventListener(
 
-  ()=>{
+  ()=> {
 
 
     cloudObjects.forEach(
 
-      cloud =>{
+      cloud => {
 
 
         const screenPosition =
 
           Cesium
-            .SceneTransforms
-            .worldToWindowCoordinates(
+          .SceneTransforms
+          .worldToWindowCoordinates(
 
-              viewer.scene,
+            viewer.scene,
 
-              cloud.position
+            cloud.position
 
-            );
-
+          );
 
 
         if(
           !screenPosition
-        ){
+        ) {
 
 
           cloud
-            .element
-            .style
-            .display =
-              "none";
+          .element
+          .style
+          .display =
+            "none";
 
 
           return;
@@ -1757,30 +1862,29 @@ viewer
         }
 
 
-
         cloud
-          .element
-          .style
-          .display =
-            "block";
-
-
-        cloud
-          .element
-          .style
-          .left =
-            screenPosition.x
-            +
-            "px";
+        .element
+        .style
+        .display =
+          "block";
 
 
         cloud
-          .element
-          .style
-          .top =
-            screenPosition.y
-            +
-            "px";
+        .element
+        .style
+        .left =
+          screenPosition.x
+          +
+          "px";
+
+
+        cloud
+        .element
+        .style
+        .top =
+          screenPosition.y
+          +
+          "px";
 
       }
 
@@ -1792,12 +1896,12 @@ viewer
 
 
 
-/* ==========================================================
+/* =========================================================
    NATURAL CLOUD FLOW
-========================================================== */
+========================================================= */
 
 
-function scheduleNextCloud(){
+function scheduleNextCloud() {
 
 
   const delay =
@@ -1811,12 +1915,11 @@ function scheduleNextCloud(){
     3000;
 
 
-
   cloudTimer =
 
     setTimeout(
 
-      ()=>{
+      ()=> {
 
 
         spawnCloud();
@@ -1834,7 +1937,7 @@ function scheduleNextCloud(){
 
 
 
-function startCloudFlow(){
+function startCloudFlow() {
 
 
   clearTimeout(
@@ -1845,12 +1948,11 @@ function startCloudFlow(){
   spawnCloud();
 
 
-
   cloudTimer =
 
     setTimeout(
 
-      ()=>{
+      ()=> {
 
 
         spawnCloud();
@@ -1868,12 +1970,12 @@ function startCloudFlow(){
 
 
 
-/* ==========================================================
+/* =========================================================
    CLEAR CLOUDS
-========================================================== */
+========================================================= */
 
 
-function clearClouds(){
+function clearClouds() {
 
 
   clearTimeout(
@@ -1883,11 +1985,12 @@ function clearClouds(){
 
   cloudObjects.forEach(
 
-    cloud =>{
+    cloud => {
+
 
       cloud
-        .element
-        .remove();
+      .element
+      .remove();
 
     }
 
@@ -1900,54 +2003,59 @@ function clearClouds(){
 
 
 
-/* ==========================================================
-   SUN RAYS BASED ON CAMERA DISTANCE
-========================================================== */
+/* =========================================================
+   SPACE EFFECTS
+
+   When camera moves far away,
+   show sunlight overlay.
+
+   Cesium itself displays
+   stars / atmosphere.
+========================================================= */
 
 
 const sunGlow =
 
-  document.getElementById(
+  document
+  .getElementById(
     "sunGlow"
   );
 
 
 const rays =
 
-  document.querySelectorAll(
+  document
+  .querySelectorAll(
     ".sunRay"
   );
 
 
-
-function updateSpaceEffects(){
+function updateSpaceEffects() {
 
 
   const height =
 
-    viewer.camera
+    viewer
+    .camera
     .positionCartographic
     .height;
 
 
-
   /*
-  Sun rays become visible
-  once we're sufficiently
-  far from Earth.
+  Above ~2500 km.
   */
 
 
   if(
     height > 2500000
-  ){
+  ) {
 
 
     sunGlow
-      .classList
-      .add(
-        "spaceVisible"
-      );
+    .classList
+    .add(
+      "spaceVisible"
+    );
 
 
     rays.forEach(
@@ -1955,24 +2063,24 @@ function updateSpaceEffects(){
       ray =>
 
         ray
-          .classList
-          .add(
-            "spaceVisible"
-          )
+        .classList
+        .add(
+          "spaceVisible"
+        )
 
     );
 
   }
 
 
-  else{
+  else {
 
 
     sunGlow
-      .classList
-      .remove(
-        "spaceVisible"
-      );
+    .classList
+    .remove(
+      "spaceVisible"
+    );
 
 
     rays.forEach(
@@ -1980,17 +2088,16 @@ function updateSpaceEffects(){
       ray =>
 
         ray
-          .classList
-          .remove(
-            "spaceVisible"
-          )
+        .classList
+        .remove(
+          "spaceVisible"
+        )
 
     );
 
   }
 
 }
-
 
 
 viewer
@@ -2004,82 +2111,88 @@ viewer
 
 
 
-/* ==========================================================
+/* =========================================================
    SEARCH
-========================================================== */
+========================================================= */
 
 
 document
-  .getElementById(
-    "search"
-  )
-  .addEventListener(
+.getElementById(
+  "search"
+)
+.addEventListener(
 
-    "submit",
+  "submit",
 
-    event =>{
-
-
-      event.preventDefault();
+  event => {
 
 
-
-      const value =
-
-        document
-          .getElementById(
-            "countryInput"
-          )
-          .value;
+    event.preventDefault();
 
 
+    const value =
 
-      const country =
-
-        findCountry(
-          value
-        );
-
-
-
-      if(
-        country
-      ){
+      document
+      .getElementById(
+        "countryInput"
+      )
+      .value;
 
 
-        focusCountry(
-          country,
-          true
-        );
+    const country =
+
+      findCountry(
+        value
+      );
 
 
-        document
-          .getElementById(
-            "countryInput"
-          )
-          .blur();
+    if(
+      country
+    ) {
 
-      }
+
+      focusCountry(
+        country,
+        true
+      );
+
+
+      document
+      .getElementById(
+        "countryInput"
+      )
+      .blur();
 
     }
 
-  );
+  }
+
+);
 
 
 
-/* ==========================================================
+/* =========================================================
    INITIALIZE
-========================================================== */
+========================================================= */
 
 
-async function initialize(){
+async function initialize() {
 
 
-  try{
+  try {
+
+
+    /*
+    HD SATELLITE TILES
+    */
 
 
     await loadSatelliteImagery();
 
+
+    /*
+    COUNTRY DATA
+    */
 
 
     const response =
@@ -2099,9 +2212,17 @@ async function initialize(){
       data.features;
 
 
+    /*
+    VERY CLEAR WORLD BORDERS
+    */
+
 
     await drawWorldBorders();
 
+
+    /*
+    START WITH TÜRKİYE
+    */
 
 
     const turkey =
@@ -2121,7 +2242,6 @@ async function initialize(){
       );
 
 
-
     await focusCountry(
 
       turkey,
@@ -2133,11 +2253,10 @@ async function initialize(){
 
     updateSpaceEffects();
 
-
   }
 
 
-  catch(error){
+  catch(error) {
 
 
     console.error(
@@ -2146,10 +2265,10 @@ async function initialize(){
 
 
     document
-      .getElementById(
-        "status"
-      )
-      .innerHTML =
+    .getElementById(
+      "status"
+    )
+    .innerHTML =
 
       "<strong>Loading error</strong>";
 
@@ -2158,11 +2277,11 @@ async function initialize(){
 }
 
 
-
 initialize();
 
 
 </script>
 
 </body>
+
 </html>
