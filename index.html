@@ -1,430 +1,304 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
+  <meta charset="UTF-8" />
 
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
-/>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+  />
 
-<title>Notron Commune</title>
+  <title>Notron Commune</title>
 
-<script src="https://unpkg.com/globe.gl"></script>
-<script src="https://cdn.jsdelivr.net/npm/d3-geo@3"></script>
+  <!-- CESIUM -->
+  <script src="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Cesium.js"></script>
 
-<style>
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/cesium@1.121/Build/Cesium/Widgets/widgets.css"
+  />
 
-*{
-  box-sizing:border-box;
-}
+  <!-- TURF: geographic calculations -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7/turf.min.js"></script>
 
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#000;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
+  <style>
+    html,
+    body,
+    #cesiumContainer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
 
-#globe{
-  position:fixed;
-  inset:0;
-  width:100vw;
-  height:100vh;
-}
+    /* remove Cesium credits/buttons visually */
+    .cesium-viewer-bottom,
+    .cesium-viewer-toolbar {
+      display: none !important;
+    }
 
+    /* ==========================
+       SEARCH
+    ========================== */
 
-/* =========================
-   TOP UI
-========================= */
+    #ui {
+      position: fixed;
 
-#top{
-  position:fixed;
+      top: 24px;
+      left: 50%;
 
-  top:24px;
-  left:50%;
+      transform: translateX(-50%);
 
-  transform:translateX(-50%);
+      width: min(90vw, 440px);
 
-  z-index:100;
+      z-index: 1000;
+    }
 
-  width:min(90vw,430px);
+    #search {
+      display: flex;
 
-  pointer-events:none;
-}
+      gap: 8px;
 
+      padding: 8px;
 
-#countrySearch{
-  pointer-events:auto;
+      border-radius: 20px;
 
-  display:flex;
+      background: rgba(5, 11, 22, 0.75);
 
-  padding:7px;
+      backdrop-filter: blur(18px);
 
-  gap:7px;
+      border: 1px solid rgba(255,255,255,.13);
 
-  border-radius:18px;
+      box-shadow:
+        0 15px 40px rgba(0,0,0,.35);
+    }
 
-  background:rgba(5,10,18,.68);
+    #countryInput {
+      flex: 1;
 
-  border:1px solid rgba(255,255,255,.13);
+      border: none;
+      outline: none;
 
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
+      padding: 13px 15px;
 
-  box-shadow:0 15px 40px rgba(0,0,0,.35);
-}
+      border-radius: 14px;
 
+      background: rgba(255,255,255,.08);
 
-#countryInput{
-  flex:1;
+      color: white;
 
-  border:none;
-  outline:none;
+      font-size: 15px;
+    }
 
-  border-radius:13px;
+    #countryInput::placeholder {
+      color: rgba(255,255,255,.5);
+    }
 
-  padding:12px 14px;
+    #focusButton {
+      border: none;
 
-  color:white;
+      border-radius: 14px;
 
-  background:rgba(255,255,255,.07);
+      padding: 0 18px;
 
-  font-size:15px;
-}
+      background: white;
 
+      color: #09111d;
 
-#countryInput::placeholder{
-  color:rgba(255,255,255,.45);
-}
+      font-weight: 700;
 
+      cursor: pointer;
+    }
 
-#focusButton{
-  border:none;
+    #status {
+      width: max-content;
 
-  padding:0 17px;
+      max-width: 90%;
 
-  border-radius:13px;
+      margin: 9px auto;
 
-  background:white;
+      padding: 7px 13px;
 
-  color:#07101d;
+      border-radius: 999px;
 
-  font-weight:700;
+      background: rgba(5,11,22,.65);
 
-  cursor:pointer;
-}
+      backdrop-filter: blur(12px);
 
+      border: 1px solid rgba(255,255,255,.10);
 
+      color: rgba(255,255,255,.65);
 
-/* =========================
-   COMMUNE LABEL
-========================= */
+      font-size: 11px;
+    }
 
-#communeStatus{
+    #status strong {
+      color: white;
+    }
 
-  width:max-content;
+    /* ==========================
+       CLOUD COMMENTS
+    ========================== */
 
-  max-width:90%;
+    #cloudLayer {
+      position: fixed;
 
-  margin:9px auto 0;
+      inset: 0;
 
-  padding:7px 12px;
+      pointer-events: none;
 
-  border-radius:999px;
+      z-index: 500;
+    }
 
-  color:rgba(255,255,255,.65);
+    .cloud {
+      position: absolute;
 
-  background:rgba(5,10,18,.52);
+      transform:
+        translate(-50%, -50%)
+        scale(.15);
 
-  border:1px solid rgba(255,255,255,.09);
+      min-width: 72px;
+      max-width: 110px;
 
-  backdrop-filter:blur(12px);
+      padding: 9px 13px;
 
-  font-size:11px;
+      color: #152437;
 
-  letter-spacing:.03em;
-}
+      font-size: 10px;
+      font-weight: 700;
 
+      text-align: center;
 
-#communeStatus strong{
-  color:white;
-}
+      opacity: 0;
 
+      border-radius: 999px;
 
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,.98),
+          rgba(224,241,255,.94)
+        );
 
-/* =========================
-   CLOUD
-========================= */
+      box-shadow:
+        0 8px 22px rgba(0,0,0,.22),
+        0 0 18px rgba(170,220,255,.30);
 
-.cloudAnchor{
+      animation:
+        cloudLife 8s ease-in-out forwards,
+        cloudFloat 4s ease-in-out infinite alternate;
+    }
 
-  pointer-events:none;
+    .cloud::before {
+      content: "";
 
-  user-select:none;
-}
+      position: absolute;
 
+      width: 32px;
+      height: 32px;
 
-.cloud{
+      top: -13px;
+      left: 17px;
 
-  --delay:0s;
+      border-radius: 50%;
 
-  position:relative;
+      background: white;
 
-  min-width:92px;
-  max-width:125px;
+      z-index: -1;
+    }
 
-  padding:11px 14px;
+    .cloud::after {
+      content: "";
 
-  border-radius:999px;
+      position: absolute;
 
-  text-align:center;
+      width: 38px;
+      height: 38px;
 
-  color:#17263a;
+      top: -16px;
+      right: 15px;
 
-  font-size:10px;
+      border-radius: 50%;
 
-  font-weight:700;
+      background: #f8fcff;
 
+      z-index: -1;
+    }
 
-  background:
+    @keyframes cloudLife {
 
-    radial-gradient(
-      circle at 25% 25%,
-      white 0 25%,
-      transparent 27%
-    ),
+      0% {
+        opacity: 0;
 
-    radial-gradient(
-      circle at 52% 15%,
-      white 0 32%,
-      transparent 34%
-    ),
+        transform:
+          translate(-50%, -50%)
+          translateY(10px)
+          scale(.15);
+      }
 
-    radial-gradient(
-      circle at 78% 30%,
-      #f9fcff 0 26%,
-      transparent 28%
-    ),
+      15% {
+        opacity: 1;
 
-    linear-gradient(
-      180deg,
-      #ffffff 0%,
-      #edf7ff 72%,
-      #dceeff 100%
-    );
+        transform:
+          translate(-50%, -50%)
+          translateY(0)
+          scale(1);
+      }
 
+      70% {
+        opacity: 1;
 
-  box-shadow:
+        transform:
+          translate(-50%, -50%)
+          translateY(-5px)
+          scale(1);
+      }
 
-    0 8px 22px rgba(0,0,0,.25),
+      100% {
+        opacity: 0;
 
-    0 0 18px rgba(130,210,255,.28),
+        transform:
+          translate(-50%, -50%)
+          translateY(-18px)
+          scale(.85);
+      }
+    }
 
-    inset 0 -6px 12px rgba(80,150,210,.12);
+    @keyframes cloudFloat {
 
+      from {
+        margin-left: -5px;
+      }
 
-  animation:
-
-    appearDisappear
-    9s
-    cubic-bezier(.22,.7,.25,1)
-    infinite,
-
-    drift
-    5s
-    ease-in-out
-    infinite
-    alternate;
-
-
-  animation-delay:
-    var(--delay),
-    var(--delay);
-
-
-  transform-origin:center;
-}
-
-
-
-.cloud::before{
-
-  content:"";
-
-  position:absolute;
-
-  width:38px;
-  height:38px;
-
-  border-radius:50%;
-
-  background:#fff;
-
-  left:15px;
-  top:-15px;
-
-  z-index:-1;
-}
-
-
-
-.cloud::after{
-
-  content:"";
-
-  position:absolute;
-
-  width:44px;
-  height:44px;
-
-  border-radius:50%;
-
-  background:#fbfdff;
-
-  right:13px;
-  top:-18px;
-
-  z-index:-1;
-}
-
-
-
-@keyframes appearDisappear{
-
-  0%{
-
-    opacity:0;
-
-    transform:
-      translateY(16px)
-      scale(.65);
-
-    filter:blur(4px);
-  }
-
-
-  12%{
-
-    opacity:0;
-  }
-
-
-  21%{
-
-    opacity:1;
-
-    transform:
-      translateY(0)
-      scale(1);
-
-    filter:blur(0);
-  }
-
-
-  66%{
-
-    opacity:1;
-
-    transform:
-      translateY(-5px)
-      scale(1);
-  }
-
-
-  82%{
-
-    opacity:0;
-
-    transform:
-      translateY(-17px)
-      scale(.92);
-
-    filter:blur(2px);
-  }
-
-
-  100%{
-
-    opacity:0;
-
-    transform:
-      translateY(-24px)
-      scale(.85);
-
-    filter:blur(3px);
-  }
-
-}
-
-
-
-@keyframes drift{
-
-  from{
-    margin-left:-7px;
-  }
-
-  to{
-    margin-left:8px;
-  }
-
-}
-
-
-
-/* =========================
-   BOTTOM
-========================= */
-
-#instructions{
-
-  position:fixed;
-
-  bottom:18px;
-
-  left:50%;
-
-  transform:translateX(-50%);
-
-  z-index:100;
-
-  color:rgba(255,255,255,.42);
-
-  font-size:10px;
-
-  letter-spacing:.04em;
-
-  white-space:nowrap;
-
-  pointer-events:none;
-}
-
-
-
-</style>
+      to {
+        margin-left: 7px;
+      }
+    }
+  </style>
 </head>
-
 
 
 <body>
 
-
-<div id="globe"></div>
-
+<div id="cesiumContainer"></div>
 
 
-<div id="top">
+<div id="ui">
 
-  <form id="countrySearch">
+  <form id="search">
 
     <input
       id="countryInput"
       placeholder="Search country..."
       autocomplete="off"
-    >
+    />
 
     <button
       id="focusButton"
@@ -436,7 +310,7 @@ html,body{
   </form>
 
 
-  <div id="communeStatus">
+  <div id="status">
 
     <strong id="countryLabel">
       Türkiye
@@ -449,815 +323,238 @@ html,body{
 </div>
 
 
-
-<div id="instructions">
-
-drag to rotate · pinch / scroll to zoom
-
-</div>
-
+<div id="cloudLayer"></div>
 
 
 <script>
 
+/* =========================================================
+   CESIUM EARTH
+========================================================= */
 
-/* =============================================
-   CREATE 3D EARTH
-============================================= */
+
+const viewer =
+  new Cesium.Viewer(
+    "cesiumContainer",
+    {
+
+      animation: false,
+
+      timeline: false,
+
+      baseLayerPicker: false,
+
+      geocoder: false,
+
+      homeButton: false,
+
+      sceneModePicker: false,
+
+      navigationHelpButton: false,
+
+      fullscreenButton: false,
+
+      infoBox: false,
+
+      selectionIndicator: false,
+
+      shouldAnimate: true,
+
+      terrainProvider:
+        new Cesium.EllipsoidTerrainProvider(),
+
+      baseLayer: false
+
+    }
+  );
 
 
-const world = Globe()(
-  document.getElementById("globe")
+/* =========================================================
+   HIGH RESOLUTION SATELLITE TILES
+
+   This replaces the 8K texture.
+
+   As you zoom:
+   more detailed image tiles automatically load.
+========================================================= */
+
+
+const satellite =
+  new Cesium.UrlTemplateImageryProvider({
+
+    url:
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+
+    maximumLevel:
+      19,
+
+    credit:
+      "Esri World Imagery"
+
+  });
+
+
+viewer.imageryLayers.addImageryProvider(
+  satellite
 );
 
 
-world
-
-.globeImageUrl(
-  "https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg"
-)
-
-.bumpImageUrl(
-  "https://unpkg.com/three-globe/example/img/earth-topology.png"
-)
-
-.backgroundImageUrl(
-  "https://unpkg.com/three-globe/example/img/night-sky.png"
-)
-
-.showAtmosphere(true)
-
-.atmosphereColor(
-  "#64bfff"
-)
-
-.atmosphereAltitude(
-  0.16
-);
+/* =========================================================
+   IMAGE QUALITY
+========================================================= */
 
 
-
-/* =============================================
-   CONTROLS
-============================================= */
-
-
-const controls =
-  world.controls();
+viewer.resolutionScale =
+  Math.min(
+    window.devicePixelRatio,
+    2
+  );
 
 
-controls.enableRotate =
+viewer.scene.globe.maximumScreenSpaceError =
+  1;
+
+
+viewer.scene.globe.tileCacheSize =
+  1000;
+
+
+viewer.scene.fxaa =
   true;
 
 
-controls.enableZoom =
+/* atmosphere */
+
+viewer.scene.skyAtmosphere.show =
   true;
 
 
-controls.enablePan =
-  false;
-
-
-controls.enableDamping =
+viewer.scene.globe.enableLighting =
   true;
 
 
-controls.dampingFactor =
-  0.08;
+/* allow zoom very close */
+
+viewer.scene.screenSpaceCameraController.minimumZoomDistance =
+  5000;
 
 
-controls.autoRotate =
-  false;
+viewer.scene.screenSpaceCameraController.maximumZoomDistance =
+  30000000;
 
 
 
-/* =============================================
-   DATA
-============================================= */
+/* =========================================================
+   COUNTRY DATA
+========================================================= */
 
 
 let countries = [];
 
 let selectedCountry = null;
 
+let selectedEntity = null;
 
 
-/* =============================================
-   TÜRKİYE COMMUNE
-============================================= */
+/* =========================================================
+   COMMENTS
+========================================================= */
 
 
-const TURKEY_COMMUNE = {
+const comments = [
+
+  "Mantıklı",
+
+  "Katılıyorum",
+
+  "Bence iyi",
+
+  "Emin değilim",
+
+  "Olabilir",
+
+  "Neden?",
+
+  "Kararsızım",
+
+  "Destekliyorum",
+
+  "Riskli olabilir",
+
+  "Daha adil olur",
+
+  "İyi düşünülmeli",
+
+  "Bence hayır"
+
+];
 
 
-  name:
-    "Türkiye",
+let cloudObjects = [];
 
-
-  camera:{
-
-    lat:39,
-
-    lng:35,
-
-    altitude:0.28
-
-  },
-
-
-  /*
-  These are visual reaction areas.
-
-  They DO NOT represent
-  the user's real location.
-  */
-
-
-  cloudLocations:[
-
-
-    {
-      lat:41.00,
-      lng:29.00
-    },
-
-
-    {
-      lat:39.90,
-      lng:32.85
-    },
-
-
-    {
-      lat:38.42,
-      lng:27.14
-    },
-
-
-    {
-      lat:37.87,
-      lng:32.48
-    },
-
-
-    {
-      lat:38.73,
-      lng:35.48
-    },
-
-
-    {
-      lat:37.07,
-      lng:37.38
-    }
-
-
-  ],
+let cloudTimer = null;
 
 
 
-  comments:[
-
-    "Mantıklı",
-
-    "Katılıyorum",
-
-    "Bence iyi",
-
-    "Emin değilim",
-
-    "Olabilir",
-
-    "Neden?",
-
-    "Kararsızım",
-
-    "Destekliyorum",
-
-    "Riskli olabilir",
-
-    "İyi düşünülmeli",
-
-    "Bence hayır",
-
-    "Daha adil olur"
-
-  ]
-
-};
-
-
-
-/* =============================================
+/* =========================================================
    NORMALIZE COUNTRY NAME
-============================================= */
+========================================================= */
 
 
 function normalize(text){
 
   return String(text || "")
 
-  .toLowerCase()
+    .toLowerCase()
 
-  .replaceAll(
-    "ı",
-    "i"
-  )
-
-  .normalize(
-    "NFD"
-  )
-
-  .replace(
-    /[\u0300-\u036f]/g,
-    ""
-  )
-
-  .replace(
-    /[^a-z0-9]/g,
-    ""
-  );
-
-}
-
-
-
-/* =============================================
-   COUNTRY COMMUNE CHECK
-============================================= */
-
-
-function isTurkey(country){
-
-  if(!country)
-    return false;
-
-
-  return (
-
-    normalize(
-      country.properties.name
+    .replaceAll(
+      "ı",
+      "i"
     )
 
-    ===
-
-    "turkey"
-
-  );
-
-}
-
-
-
-/* =============================================
-   CLOUD ELEMENT
-============================================= */
-
-
-function makeCloud(item){
-
-
-  const root =
-    document.createElement(
-      "div"
-    );
-
-
-  root.className =
-    "cloudAnchor";
-
-
-
-  const cloud =
-    document.createElement(
-      "div"
-    );
-
-
-  cloud.className =
-    "cloud";
-
-
-  cloud.style.setProperty(
-    "--delay",
-    `${item.delay}s`
-  );
-
-
-  cloud.innerText =
-    item.text;
-
-
-
-  /*
-  Change comment after
-  every animation cycle.
-  */
-
-
-  cloud.addEventListener(
-
-    "animationiteration",
-
-    ()=>{
-
-
-      const comments =
-        TURKEY_COMMUNE.comments;
-
-
-      cloud.innerText =
-
-        comments[
-          Math.floor(
-            Math.random() *
-            comments.length
-          )
-        ];
-
-    }
-
-  );
-
-
-  root.appendChild(
-    cloud
-  );
-
-
-  return root;
-
-}
-
-
-
-/* =============================================
-   CONFIGURE HTML CLOUD LAYER
-============================================= */
-
-
-world
-
-.htmlLat(
-  "lat"
-)
-
-.htmlLng(
-  "lng"
-)
-
-.htmlAltitude(
-  0.035
-)
-
-.htmlElement(
-  makeCloud
-);
-
-
-
-/* =============================================
-   SHOW TÜRKİYE CLOUDS
-============================================= */
-
-
-function showTurkeyClouds(){
-
-
-  const cloudData =
-
-    TURKEY_COMMUNE
-    .cloudLocations
-
-    .map(
-
-      (spot,index)=>({
-
-        lat:
-          spot.lat,
-
-        lng:
-          spot.lng,
-
-        delay:
-          -(index * 1.35),
-
-        text:
-
-          TURKEY_COMMUNE
-          .comments[index]
-
-      })
-
-    );
-
-
-  world.htmlElementsData(
-    cloudData
-  );
-
-}
-
-
-
-/* =============================================
-   COUNTRY POLYGONS
-============================================= */
-
-
-function styleCountries(){
-
-
-  world
-
-
-  .polygonAltitude(
-
-    country =>
-
-      country === selectedCountry
-
-      ? 0.012
-
-      : 0.003
-
-  )
-
-
-  .polygonCapColor(
-
-    country =>
-
-      country === selectedCountry
-
-      ?
-
-      "rgba(255,205,80,.10)"
-
-      :
-
-      "rgba(0,0,0,0)"
-
-  )
-
-
-  .polygonSideColor(
-
-    ()=>"rgba(0,0,0,0)"
-
-  )
-
-
-  .polygonStrokeColor(
-
-    country =>
-
-      country === selectedCountry
-
-      ?
-
-      "rgba(255,220,120,.95)"
-
-      :
-
-      "rgba(255,255,255,.22)"
-
-  )
-
-  .polygonsTransitionDuration(
-    500
-  );
-
-}
-
-
-
-/* =============================================
-   FIT CAMERA
-============================================= */
-
-
-function automaticAltitude(country){
-
-
-  const bounds =
-    d3.geoBounds(
-      country
-    );
-
-
-  let longitudeSize =
-
-    Math.abs(
-
-      bounds[1][0]
-
-      -
-
-      bounds[0][0]
-
-    );
-
-
-  const latitudeSize =
-
-    Math.abs(
-
-      bounds[1][1]
-
-      -
-
-      bounds[0][1]
-
-    );
-
-
-  if(
-    longitudeSize > 180
-  ){
-
-    longitudeSize =
-      latitudeSize;
-
-  }
-
-
-  const size =
-
-    Math.max(
-
-      longitudeSize,
-
-      latitudeSize
-
-    );
-
-
-  return Math.max(
-
-    0.20,
-
-    Math.min(
-
-      0.8,
-
-      0.12 +
-      size * 0.011
-
+    .normalize(
+      "NFD"
     )
 
-  );
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+
+    .replace(
+      /[^a-z0-9]/g,
+      ""
+    );
 
 }
 
 
 
-/* =============================================
-   FOCUS COUNTRY
-============================================= */
-
-
-function focusCountry(
-  country
-){
-
-
-  if(!country)
-    return;
-
-
-  selectedCountry =
-    country;
-
-
-  const name =
-    country.properties.name;
-
-
-  document
-  .getElementById(
-    "countryLabel"
-  )
-  .innerText =
-
-    isTurkey(country)
-
-    ?
-
-    "Türkiye"
-
-    :
-
-    name;
-
-
-
-  /*
-  TÜRKİYE
-  */
-
-
-  if(
-    isTurkey(country)
-  ){
-
-
-    world.pointOfView(
-
-      TURKEY_COMMUNE.camera,
-
-      1500
-
-    );
-
-
-    showTurkeyClouds();
-
-  }
-
-
-  /*
-  OTHER COUNTRY
-  */
-
-
-  else{
-
-
-    const center =
-
-      d3.geoCentroid(
-        country
-      );
-
-
-    world.pointOfView(
-
-      {
-
-        lat:
-          center[1],
-
-        lng:
-          center[0],
-
-        altitude:
-          automaticAltitude(
-            country
-          )
-
-      },
-
-      1500
-
-    );
-
-
-    /*
-    We haven't created
-    the commune for this
-    country yet.
-    */
-
-
-    world.htmlElementsData(
-      []
-    );
-
-  }
-
-
-  styleCountries();
-
-
-  world.polygonsData(
-    countries
-  );
-
-}
-
-
-
-/* =============================================
-   FIND COUNTRY
-============================================= */
-
-
-function findCountry(
-  search
-){
-
-
-  const value =
-    normalize(search);
-
-
-
-  if(
-
-    value === "turkiye"
-
-    ||
-
-    value === "turkey"
-
-  ){
-
-
-    return countries.find(
-
-      country =>
-
-        normalize(
-          country.properties.name
-        )
-
-        ===
-
-        "turkey"
-
-    );
-
-  }
-
-
-
-  return countries.find(
-
-    country =>
-
-      normalize(
-        country.properties.name
-      )
-
-      ===
-
-      value
-
-  )
-
-  ||
-
-  countries.find(
-
-    country =>
-
-      normalize(
-        country.properties.name
-      )
-
-      .includes(
-        value
-      )
-
-  );
-
-}
-
-
-
-/* =============================================
-   LOAD WORLD
-============================================= */
+/* =========================================================
+   LOAD COUNTRY BORDERS
+========================================================= */
 
 
 fetch(
-
-"https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
-
+  "https://raw.githubusercontent.com/holtzy/D3-graph-gallery/master/DATA/world.geojson"
 )
-
 
 .then(
   response =>
     response.json()
 )
 
-
 .then(
-  data =>{
-
+  data => {
 
     countries =
       data.features;
 
 
-    world.polygonsData(
-      countries
-    );
-
-
-    styleCountries();
-
-
-
-    /*
-    Start with Türkiye.
-    */
+    drawBorders();
 
 
     const turkey =
-
       countries.find(
 
         country =>
@@ -1274,7 +571,8 @@ fetch(
 
 
     focusCountry(
-      turkey
+      turkey,
+      false
     );
 
   }
@@ -1283,104 +581,677 @@ fetch(
 
 
 
-/* =============================================
-   SEARCH
-============================================= */
+/* =========================================================
+   DRAW BORDERS
+========================================================= */
 
 
-document
-
-.getElementById(
-  "countrySearch"
-)
-
-.addEventListener(
-
-  "submit",
-
-  event =>{
+async function drawBorders(){
 
 
-    event.preventDefault();
+  const source =
+    await Cesium.GeoJsonDataSource.load(
 
+      {
 
-    const value =
+        type:
+          "FeatureCollection",
 
-      document
-      .getElementById(
-        "countryInput"
-      )
-      .value;
+        features:
+          countries
 
+      },
 
-    const country =
-      findCountry(
-        value
-      );
+      {
 
+        stroke:
+          Cesium.Color.WHITE.withAlpha(.45),
 
-    if(country){
+        fill:
+          Cesium.Color.TRANSPARENT,
 
-      focusCountry(
-        country
-      );
+        strokeWidth:
+          1.2,
 
-    }
+        clampToGround:
+          true
 
-  }
+      }
 
-);
-
-
-
-/* =============================================
-   CLICK COUNTRY
-============================================= */
-
-
-world.onPolygonClick(
-
-  country =>{
-
-    focusCountry(
-      country
     );
 
-  }
 
-);
-
-
-
-/* =============================================
-   RESPONSIVE
-============================================= */
-
-
-function resize(){
-
-
-  world
-
-  .width(
-    window.innerWidth
-  )
-
-  .height(
-    window.innerHeight
+  viewer.dataSources.add(
+    source
   );
 
 }
 
 
-window.addEventListener(
-  "resize",
-  resize
+
+/* =========================================================
+   FIND COUNTRY
+========================================================= */
+
+
+function findCountry(search){
+
+
+  let q =
+    normalize(
+      search
+    );
+
+
+  if(
+    q === "turkiye"
+  ){
+
+    q =
+      "turkey";
+
+  }
+
+
+  if(
+    q === "usa"
+    ||
+    q === "us"
+  ){
+
+    q =
+      "unitedstatesofamerica";
+
+  }
+
+
+  if(
+    q === "uk"
+  ){
+
+    q =
+      "unitedkingdom";
+
+  }
+
+
+  return countries.find(
+
+    country =>
+
+      normalize(
+        country.properties.name
+      )
+
+      ===
+
+      q
+
+  )
+
+  ||
+
+  countries.find(
+
+    country =>
+
+      normalize(
+        country.properties.name
+      )
+
+      .includes(
+        q
+      )
+
+  );
+
+}
+
+
+
+/* =========================================================
+   COUNTRY CAMERA
+========================================================= */
+
+
+function countryRectangle(
+  country
+){
+
+
+  const bbox =
+    turf.bbox(
+      country
+    );
+
+
+  return Cesium.Rectangle.fromDegrees(
+
+    bbox[0],
+
+    bbox[1],
+
+    bbox[2],
+
+    bbox[3]
+
+  );
+
+}
+
+
+
+/* =========================================================
+   SELECT COUNTRY
+========================================================= */
+
+
+function focusCountry(
+  country,
+  animate = true
+){
+
+
+  if(
+    !country
+  )
+    return;
+
+
+  selectedCountry =
+    country;
+
+
+  document
+    .getElementById(
+      "countryLabel"
+    )
+    .innerText =
+
+      normalize(
+        country.properties.name
+      )
+
+      === "turkey"
+
+      ?
+
+      "Türkiye"
+
+      :
+
+      country.properties.name;
+
+
+
+  clearClouds();
+
+
+  const rectangle =
+    countryRectangle(
+      country
+    );
+
+
+  if(
+    animate
+  ){
+
+
+    viewer.camera.flyTo({
+
+      destination:
+        rectangle,
+
+      duration:
+        1.7
+
+    });
+
+  }
+
+
+  else{
+
+
+    viewer.camera.setView({
+
+      destination:
+        rectangle
+
+    });
+
+  }
+
+
+  startCloudFlow();
+
+}
+
+
+
+/* =========================================================
+   RANDOM POINT INSIDE COUNTRY
+========================================================= */
+
+
+function randomPointInsideCountry(){
+
+
+  if(
+    !selectedCountry
+  )
+    return null;
+
+
+  const bbox =
+    turf.bbox(
+      selectedCountry
+    );
+
+
+  for(
+    let i = 0;
+    i < 1000;
+    i++
+  ){
+
+
+    const lng =
+
+      bbox[0]
+
+      +
+
+      Math.random()
+      *
+      (
+        bbox[2]
+        -
+        bbox[0]
+      );
+
+
+    const lat =
+
+      bbox[1]
+
+      +
+
+      Math.random()
+      *
+      (
+        bbox[3]
+        -
+        bbox[1]
+      );
+
+
+    const point =
+      turf.point(
+        [
+          lng,
+          lat
+        ]
+      );
+
+
+    if(
+      turf.booleanPointInPolygon(
+        point,
+        selectedCountry
+      )
+    ){
+
+
+      return {
+
+        lat,
+        lng
+
+      };
+
+    }
+
+  }
+
+
+  return null;
+
+}
+
+
+
+/* =========================================================
+   CLOUD
+========================================================= */
+
+
+function spawnCloud(){
+
+
+  if(
+    !selectedCountry
+  )
+    return;
+
+
+  const point =
+    randomPointInsideCountry();
+
+
+  if(
+    !point
+  )
+    return;
+
+
+  const element =
+    document.createElement(
+      "div"
+    );
+
+
+  element.className =
+    "cloud";
+
+
+  element.innerText =
+
+    comments[
+
+      Math.floor(
+
+        Math.random()
+
+        *
+
+        comments.length
+
+      )
+
+    ];
+
+
+  document
+    .getElementById(
+      "cloudLayer"
+    )
+    .appendChild(
+      element
+    );
+
+
+  const cloud = {
+
+    element,
+
+    lat:
+      point.lat,
+
+    lng:
+      point.lng,
+
+    position:
+
+      Cesium.Cartesian3.fromDegrees(
+
+        point.lng,
+
+        point.lat,
+
+        7000
+
+      )
+
+  };
+
+
+  cloudObjects.push(
+    cloud
+  );
+
+
+  if(
+    cloudObjects.length > 3
+  ){
+
+
+    const old =
+      cloudObjects.shift();
+
+
+    old.element.remove();
+
+  }
+
+
+
+  /* remove after animation */
+
+
+  setTimeout(
+    ()=>{
+
+
+      cloudObjects =
+        cloudObjects.filter(
+
+          item =>
+            item !== cloud
+
+        );
+
+
+      element.remove();
+
+    },
+
+    8000
+
+  );
+
+}
+
+
+
+/* =========================================================
+   MOVE HTML CLOUD WITH EARTH
+========================================================= */
+
+
+viewer.scene.postRender.addEventListener(
+
+  ()=>{
+
+
+    cloudObjects.forEach(
+
+      cloud =>{
+
+
+        const windowPosition =
+
+          Cesium.SceneTransforms
+          .wgs84ToWindowCoordinates(
+
+            viewer.scene,
+
+            cloud.position
+
+          );
+
+
+        if(
+          !windowPosition
+        ){
+
+          cloud.element.style.display =
+            "none";
+
+          return;
+
+        }
+
+
+        cloud.element.style.display =
+          "block";
+
+
+        cloud.element.style.left =
+          windowPosition.x + "px";
+
+
+        cloud.element.style.top =
+          windowPosition.y + "px";
+
+      }
+
+    );
+
+  }
+
 );
 
 
-resize();
 
+/* =========================================================
+   CLOUD FLOW
+========================================================= */
+
+
+function scheduleCloud(){
+
+
+  const wait =
+
+    1800
+
+    +
+
+    Math.random()
+    *
+    3200;
+
+
+  cloudTimer =
+    setTimeout(
+
+      ()=>{
+
+
+        spawnCloud();
+
+        scheduleCloud();
+
+      },
+
+      wait
+
+    );
+
+}
+
+
+
+function startCloudFlow(){
+
+
+  clearTimeout(
+    cloudTimer
+  );
+
+
+  spawnCloud();
+
+
+  scheduleCloud();
+
+}
+
+
+
+function clearClouds(){
+
+
+  clearTimeout(
+    cloudTimer
+  );
+
+
+  cloudObjects.forEach(
+
+    cloud =>
+      cloud.element.remove()
+
+  );
+
+
+  cloudObjects = [];
+
+}
+
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+
+document
+
+  .getElementById(
+    "search"
+  )
+
+  .addEventListener(
+
+    "submit",
+
+    event =>{
+
+
+      event.preventDefault();
+
+
+      const search =
+
+        document
+
+          .getElementById(
+            "countryInput"
+          )
+
+          .value;
+
+
+      const country =
+        findCountry(
+          search
+        );
+
+
+      if(
+        country
+      ){
+
+
+        focusCountry(
+          country
+        );
+
+
+        document
+          .getElementById(
+            "countryInput"
+          )
+          .blur();
+
+      }
+
+    }
+
+  );
 
 </script>
 
